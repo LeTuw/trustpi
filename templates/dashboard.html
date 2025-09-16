@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiTrust Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+    <script>
+    Pi.init({version: "2.0", sandbox: true});
+    console.log(Pi)
+    </script>
+
+    <script>
+        
+async function verifyAuth() {
+  try {
+    const res = await fetch("/api/verify-auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = await res.json();
+
+    if (data.success && data.user) {
+      const username = data.user.username || "User";
+      const uid = data.user.uid || "";
+
+      // Update DOM
+      document.getElementById("user-name").textContent = username;
+      document.getElementById("user-email").textContent = uid;
+
+      // Avatar = first 2 letters of first word in username
+      const initials = username.split(" ")[0].slice(0, 2).toUpperCase();
+      document.getElementById("user-avatar").textContent = initials;
+    } else {
+      console.log("Auth failed:", data.error);
+    }
+  } catch (err) {
+    console.error("Error verifying auth:", err);
+  }
+}
+
+verifyAuth();
+</script>
+
+    <style>
+        :root {
+            --primary: #2b60de;
+            --primary-dark: #1a4fc4;
+            --secondary: #14b89c;
+            --dark: #1a2238;
+            --light: #f9f9f9;
+            --gray: #7f8fa6;
+            --danger: #e84118;
+            --warning: #fbc531;
+            --success: #44bd32;
+            --sidebar-width: 250px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: #333;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar styling */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: white;
+            padding: 20px 0;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+        
+        .logo {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #d1d1d1;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left: 4px solid #14b89c;
+        }
+        
+        .nav-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #14b89c, #2b60de);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .logout-btn {
+            background: rgba(232, 65, 24, 0.1);
+            color: var(--danger);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        /* Dashboard sections */
+        .dashboard-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .section-action {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-action i {
+            margin-right: 5px;
+        }
+        
+        /* Plan cards */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .plan-card {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .plan-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .plan-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: rgba(68, 189, 50, 0.1);
+            color: var(--success);
+        }
+        
+        .status-expired {
+            background: rgba(232, 65, 24, 0.1);
+            color: var(--danger);
+        }
+        
+        .plan-details {
+            margin-bottom: 15px;
+        }
+        
+        .plan-detail {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            color: var(--gray);
+        }
+        
+        .plan-detail i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        .plan-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: rgba(43, 96, 222, 0.1);
+            color: var(--primary);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(43, 96, 222, 0.2);
+        }
+        
+        /* Create plan modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        .plan-option {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .plan-option:hover {
+            border-color: var(--primary);
+            background: rgba(43, 96, 222, 0.05);
+        }
+        
+        .plan-option.selected {
+            border-color: var(--primary);
+            background: rgba(43, 96, 222, 0.1);
+        }
+        
+        .plan-price {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar .logo h1, .sidebar .nav-text {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+            
+            .plans-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h1>PiTrust</h1>
+        </div>
+        <a href="#" class="nav-item active">
+            <i class="fas fa-th-large"></i>
+            <span class="nav-text">Dashboard</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-cube"></i>
+            <span class="nav-text">My Plans</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-credit-card"></i>
+            <span class="nav-text">Payments</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-shield-alt"></i>
+            <span class="nav-text">Trust Checks</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-cog"></i>
+            <span class="nav-text">Settings</span>
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="user-info">
+                <div id="user-avatar" class="user-avatar">JD</div>
+                <div>
+                    <div id="user-name" class="user-name">John Doe</div>
+                    <div id="user-email" class="user-email">john@example.com</div>
+                </div>
+            </div>
+            <button class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>Logout
+            </button>
+        </div>
+
+        <!-- My Plans Section -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">My Plans</h2>
+                <a href="#" class="section-action" id="createPlanBtn">
+                    <i class="fas fa-plus"></i> Create New Plan
+                </a>
+            </div>
+            
+            <div class="plans-grid">
+                <div class="plan-card">
+                    <div class="plan-header">
+                        <div class="plan-name">Growth Plan</div>
+                        <div class="plan-status status-active">Active</div>
+                    </div>
+                    <div class="plan-details">
+                        <div class="plan-detail">
+                            <i class="fas fa-check-circle"></i> 5,000 checks/month
+                        </div>
+                        <div class="plan-detail">
+                            <i class="fas fa-check-circle"></i> 3 API keys
+                        </div>
+                        <div class="plan-detail">
+                            <i class="fas fa-check-circle"></i> Basic analytics
+                        </div>
+                        <div class="plan-detail">
+                            <i class="fas fa-calendar"></i> Expires: Dec 15, 2023
+                        </div>
+                    </div>
+                    <div class="plan-actions">
+                        <button class="btn btn-primary">Renew</button>
+                        <button class="btn btn-secondary">Upgrade</button>
+                    </div>
+                </div>
+                
+                <div class="plan-card">
+                    <div class="plan-header">
+                        <div class="plan-name">Starter Plan</div>
+                        <div class="plan-status status-expired">Expired</div>
+                    </div>
+                    <div class="plan-details">
+                        <div class="plan-detail">
+                            <i class="fas fa-check-circle"></i> 500 checks/month
+                        </div>
+                        <div class="plan-detail">
+                            <i class="fas fa-check-circle"></i> 1 API key
+                        </div>
+                        <div class="plan-detail">
+                            <i class="fas fa-check-circle"></i> Email support
+                        </div>
+                        <div class="plan-detail">
+                            <i class="fas fa-calendar"></i> Expired: Oct 5, 2023
+                        </div>
+                    </div>
+                    <div class="plan-actions">
+                        <button class="btn btn-primary">Renew</button>
+                        <button class="btn btn-secondary">Upgrade</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trust Checks Section -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">Trust Checks</h2>
+                <div class="quota">12/50 checks used this month</div>
+            </div>
+            
+            <div class="trust-check-form">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" placeholder="Enter Pi Wallet Address" style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+                    <button class="btn btn-primary">Check Trust Score</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payments Section -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">Recent Payments</h2>
+                <a href="#" class="section-action">
+                    <i class="fas fa-history"></i> View All
+                </a>
+            </div>
+            
+            <div style="text-align: center; padding: 20px; color: var(--gray);">
+                <i class="fas fa-receipt" style="font-size: 40px; margin-bottom: 10px;"></i>
+                <p>No payments yet. Your transaction history will appear here.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Plan Modal -->
+    <div class="modal" id="createPlanModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Choose a Plan</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <div class="plan-option">
+                <h3>Starter Plan</h3>
+                <div class="plan-price">25 π / month</div>
+                <ul style="list-style: none; margin: 10px 0;">
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> 500 checks/month</li>
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> 1 API key</li>
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> Email support</li>
+                </ul>
+            </div>
+            
+            <div class="plan-option selected">
+                <h3>Growth Plan</h3>
+                <div class="plan-price">100 π / month</div>
+                <ul style="list-style: none; margin: 10px 0;">
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> 5,000 checks/month</li>
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> 3 API keys</li>
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> Basic analytics</li>
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> Priority support</li>
+                </ul>
+            </div>
+            
+            <div class="plan-option">
+                <h3>Professional Plan</h3>
+                <div class="plan-price">250 π / month</div>
+                <ul style="list-style: none; margin: 10px 0;">
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> 20,000 checks/month</li>
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> 10 API keys</li>
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> Bulk operations</li>
+                    <li><i class="fas fa-check" style="color: var(--success);"></i> Webhooks</li>
+                </ul>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary close-modal">Cancel</button>
+                <button class="btn btn-primary">Purchase Plan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        Pi.init({version: '2.0', sandbox: 'true'})
+
+        // Modal functionality
+        const modal = document.getElementById('createPlanModal');
+        const createPlanBtn = document.getElementById('createPlanBtn');
+        const closeModalBtns = document.querySelectorAll('.close-modal');
+        const planOptions = document.querySelectorAll('.plan-option');
+        
+        createPlanBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            modal.style.display = 'flex';
+        });
+        
+        closeModalBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+        });
+        
+        planOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                planOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Wallet Trust Score - PiTrust</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+    <script>
+        Pi.init({ version: "2.0", sandbox: true });
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: #0f2027;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #fff;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header styling */
+        header {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-weight: 700;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo span {
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-right: 5px;
+        }
+        
+        /* Navigation styling */
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 30px;
+        }
+        
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+            transition: color 0.3s;
+            position: relative;
+            padding: 5px 0;
+        }
+        
+        nav ul li a:hover {
+            color: #14b89c;
+        }
+        
+        nav ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #14b89c;
+            transition: width 0.3s;
+        }
+        
+        nav ul li a:hover::after {
+            width: 100%;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        /* Main content */
+        .main-content {
+            padding: 40px 0;
+            min-height: calc(100vh - 200px);
+        }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        /* Form styling */
+        .wallet-form {
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            text-align: left;
+        }
+        
+        .wallet-input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .wallet-input:focus {
+            outline: none;
+            border-color: #14b89c;
+            box-shadow: 0 0 0 2px rgba(20, 184, 156, 0.2);
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(20, 184, 156, 0.3);
+        }
+        
+        /* Results section */
+        .results {
+            display: none;
+        }
+        
+        .score-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: conic-gradient(
+                #14b89c 0% 61.8%,
+                #fbc531 61.8% 86%,
+                #e84118 86% 100%
+            );
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .score-circle-inner {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #0f2027;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .score-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .score-label {
+            font-size: 1rem;
+            color: #d1d1d1;
+            margin-top: 5px;
+        }
+        
+        .score-category {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #14b89c;
+        }
+        
+        .wallet-address {
+            font-family: monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            word-break: break-all;
+        }
+        
+        /* Components grid */
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .component-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #14b89c;
+        }
+        
+        .component-name {
+            font-size: 0.9rem;
+            color: #d1d1d1;
+            margin-bottom: 10px;
+        }
+        
+        .component-score {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .component-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .component-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            border-radius: 4px;
+        }
+        
+        .interpretation {
+            background: rgba(20, 184, 156, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #14b89c;
+            margin-top: 20px;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 40px 0 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 20px;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 15px;
+            color: #14b89c;
+        }
+        
+        .footer-section p {
+            color: #d1d1d1;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .footer-section p:hover {
+            color: #14b89c;
+        }
+        
+        .footer-bottom {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d1d1d1;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            nav ul {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                padding: 20px;
+                backdrop-filter: blur(10px);
+            }
+            
+            nav ul.show {
+                display: flex;
+            }
+            
+            nav ul li {
+                margin: 15px 0;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Loading animation */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 5px solid #14b89c;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <span>PiTrust</span> Score
+            </div>
+            <nav>
+                <ul id="menu">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">API Docs</a></li>
+                    <li><a href="#">Examples</a></li>
+                    <li><a href="#">Pricing</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container main-content">
+        <h1 class="page-title">Check Wallet Trust Score</h1>
+        
+        <div class="card wallet-form" id="inputSection">
+            <h2>Enter Pi Wallet Address</h2>
+            <p>Check the trust score of any Pi Network wallet to verify its reputation</p>
+            
+            <div id="walletForm">
+                <div class="form-group">
+                    <label for="walletAddress">Wallet Address</label>
+                    <input type="text" id="walletAddress" class="wallet-input" placeholder="GABCD1234..." required>
+                </div>
+                <button type="button" id="checkbtn" class="btn">Check Trust Score</button>
+            </div>
+        </div>
+        
+        <div class="loading" id="loadingSection">
+            <div class="spinner"></div>
+            <p>Analyzing wallet data and calculating trust score...</p>
+        </div>
+        
+        <div class="card results" id="resultsSection">
+            <div class="score-header">
+                <div class="score-circle">
+                    <div class="score-circle-inner">
+                        <div class="score-value" id="scoreValue">618</div>
+                        <div class="score-label" id="scoreLabel">ESTABLISHED MEMBER</div>
+                    </div>
+                </div>
+                <h2>Trust Score Result</h2>
+                <div class="wallet-address" id="resultWalletAddress">GBQWCPVKFHB35TANHS7EBVELFGXCDGG6UPVYAZGH2MDT42PFG23EQUSN</div>
+            </div>
+            
+            <div class="components-grid">
+                <div class="component-card">
+                    <div class="component-name">Payment Reliability</div>
+                    <div class="component-score">700/1000</div>
+                    <div class="component-bar">
+                        <div class="component-fill" style="width: 70%;"></div>
+                    </div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">Account Tenure</div>
+                    <div class="component-score">925/1000</div>
+                    <div class="component-bar">
+                        <div class="component-fill" style="width: 92.5%;"></div>
+                    </div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">Network Strength</div>
+                    <div class="component-score">520/1000</div>
+                    <div class="component-bar">
+                        <div class="component-fill" style="width: 52%;"></div>
+                    </div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">Balance Health</div>
+                    <div class="component-score">253/1000</div>
+                    <div class="component-bar">
+                        <div class="component-fill" style="width: 25.3%;"></div>
+                    </div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">On-Chain Attestations</div>
+                    <div class="component-score">462/1000</div>
+                    <div class="component-bar">
+                        <div class="component-fill" style="width: 46.2%;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="interpretation">
+                <h3>Score Interpretation</h3>
+                <p id="scoreInterpretation">This wallet shows well-established account, low balance stability. The wallet is over 1 year old with perfect transaction history but currently maintains a very low balance.</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn" onclick="resetForm()">Check Another Wallet</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <p>API Documentation</p>
+                    <p>Developer Guide</p>
+                    <p>API Examples</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <p>About PiTrust</p>
+                    <p>Pricing</p>
+                    <p>Contact Us</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Legal</h3>
+                    <p>Privacy Policy</p>
+                    <p>Terms of Service</p>
+                    <p>Data Processing</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 PiTrust Score - Trust Infrastructure for Pi Network. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const menu = document.getElementById('menu');
+    
+    mobileMenuBtn.addEventListener('click', () => {
+        menu.classList.toggle('show');
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && e.target !== mobileMenuBtn) {
+            menu.classList.remove('show');
+        }
+    });
+
+    Pi.init({ version: "2.0", sandbox: true });
+    function onIncompletePaymentFound(payment) {
+        console.log("Incomplete payment:", payment);
+    }   
+    const scopes = ["username","payments"]
+    Pi.authenticate(scopes, onIncompletePaymentFound);
+    console.log("Pi SDK initialized");
+
+    // Notyf for notifications
+    const notyf = new Notyf({
+        duration: 3000,
+        position: { x: 'right', y: 'top' }
+    });
+
+    // Wallet validation
+    function isValidWallet(address) {
+        const regex = /^G[A-Z0-9]{55}$/;
+        return regex.test(address);
+    }
+
+    // Form submission
+    document.getElementById('checkbtn').addEventListener('click', async function(e) {
+
+        alert("clicked")
+
+        const walletAddress = document.getElementById('walletAddress').value.trim();
+        if (!isValidWallet(walletAddress)) {
+            notyf.error("Invalid wallet address. Must start with G and be 56 characters.");
+            return;
+        }
+
+        document.getElementById('inputSection').style.display = 'none';
+        document.getElementById('loadingSection').style.display = 'block';
+
+        const paymentData = {
+            amount: 1,
+            memo: "PiTrust check",
+            metadata: { walletAddress }
+        };
+
+        // Trigger Pi payment
+        Pi.createPayment(paymentData, {
+            onReadyForServerApproval: async (paymentId) => {
+                console.log("Ready for approval:", paymentId);
+                await fetch("/payment/approve", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ paymentId })
+                });
+            },
+
+            onReadyForServerCompletion: async (paymentId, txid) => {
+                console.log("Ready for completion:", paymentId, txid);
+                try {
+                    const response = await fetch("/payment/complete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ paymentId, txid })
+                    });
+
+                    const result = await response.json();
+                    console.log("Backend response:", result);
+
+                    if (result.status === "ok") {
+                        const trust = result.trust_result;
+
+                        // Update UI
+                        document.getElementById('scoreValue').textContent = trust.pi_trust_score;
+                        document.getElementById('scoreLabel').textContent = trust.category;
+                        document.getElementById('resultWalletAddress').textContent = trust.wallet_id;
+
+                        const components = trust.components;
+                        const componentNames = {
+                            payment_reliability: "Payment Reliability",
+                            account_tenure: "Account Tenure",
+                            network_strength: "Network Strength",
+                            balance_health: "Balance Health",
+                            onchain_attestations: "On-Chain Attestations"
+                        };
+
+                        const grid = document.querySelector('.components-grid');
+                        grid.innerHTML = "";
+                        Object.keys(components).forEach(key => {
+                            const score = components[key];
+                            const percentage = Math.min(100, (score / 1000) * 100);
+                            grid.innerHTML += `
+                                <div class="component-card">
+                                    <div class="component-name">${componentNames[key]}</div>
+                                    <div class="component-score">${score}/1000</div>
+                                    <div class="component-bar">
+                                        <div class="component-fill" style="width: ${percentage}%;"></div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        document.getElementById('scoreInterpretation').textContent = trust.breakdown;
+
+                        document.getElementById('loadingSection').style.display = 'none';
+                        document.getElementById('resultsSection').style.display = 'block';
+                    } else {
+                        notyf.error("Error: " + result.message);
+                        document.getElementById('loadingSection').style.display = 'none';
+                        document.getElementById('inputSection').style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error(err);
+                    notyf.error("Backend error occurred.");
+                    document.getElementById('loadingSection').style.display = 'none';
+                    document.getElementById('inputSection').style.display = 'block';
+                }
+            },
+
+            onCancel: (paymentId) => {
+                console.log("Payment cancelled:", paymentId);
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('inputSection').style.display = 'block';
+            },
+
+            onError: (error, payment) => {
+                console.error("Payment error:", error, payment);
+                notyf.error("Payment error occurred.");
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('inputSection').style.display = 'block';
+            }
+        });
+    });
+
+    // Reset form
+    function resetForm() {
+        document.getElementById('walletAddress').value = "";
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('inputSection').style.display = 'block';
+    }
+</script>
+</body>
+</html>

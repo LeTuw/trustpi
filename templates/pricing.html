@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiTrust API Pricing - Business Plans</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+    <script>
+    Pi.init({version: "2.0", sandbox: 'true'});
+    
+async function handleGetStarted() {
+  // 0️⃣ Make sure Pi SDK exists
+  if (typeof window.Pi === "undefined") {
+    alert("Please open this app in Pi Browser.");
+    
+    return;
+  }
+
+  try {
+    // 1️⃣ Check backend session
+    const scopes = ["username"]; // request username from Pi
+    const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
+    
+    const res = await fetch("/api/store-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken: authResult.accessToken }),
+      credentials: "include", // important so Flask session cookie is used
+    });
+    
+    if (authResult) {
+      window.location.href = "/dashboard";
+    } else {
+      console.error("Backend verification failed");
+    }
+
+  } catch (err) {
+    console.error("Error during Get Started:", err);
+    alert("Something went wrong. Please use Pi Browser.", err);
+  }
+}
+
+// Optional: placeholder for Pi SDK callback
+function onIncompletePaymentFound(payment) {
+  console.log("Incomplete payment:", payment);
+}
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: #0f2027;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #fff;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header styling */
+        header {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-weight: 700;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo span {
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-right: 5px;
+        }
+        
+        /* Navigation styling */
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 30px;
+        }
+        
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+            transition: color 0.3s;
+            position: relative;
+            padding: 5px 0;
+        }
+        
+        nav ul li a:hover {
+            color: #14b89c;
+        }
+        
+        nav ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #14b89c;
+            transition: width 0.3s;
+        }
+        
+        nav ul li a:hover::after {
+            width: 100%;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        /* Hero section */
+        .hero {
+            padding: 80px 0;
+            text-align: center;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 30px;
+            opacity: 0.9;
+            color: #d1d1d1;
+        }
+        
+        /* Pricing section */
+        .pricing {
+            padding: 40px 0 80px;
+        }
+        
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            border-color: #14b89c;
+        }
+        
+        .popular {
+            border: 2px solid #14b89c;
+            transform: scale(1.03);
+        }
+        
+        .popular::before {
+            content: 'MOST POPULAR';
+            position: absolute;
+            top: 15px;
+            right: -30px;
+            background: #14b89c;
+            color: white;
+            padding: 5px 30px;
+            font-size: 12px;
+            font-weight: 600;
+            transform: rotate(45deg);
+        }
+        
+        .pricing-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        
+        .price {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 20px 0;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .price span {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #d1d1d1;
+        }
+        
+        .pricing-features {
+            list-style: none;
+            margin: 25px 0;
+            text-align: left;
+        }
+        
+        .pricing-features li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+        }
+        
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+        
+        .pricing-features li i {
+            color: #14b89c;
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(20, 184, 156, 0.3);
+        }
+        
+        .use-case {
+            margin-top: 10px;
+            padding: 15px;
+            background: rgba(20, 184, 156, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #14b89c;
+            margin-bottom: 30px;
+        }
+        
+        .use-case i {
+            color: #14b89c;
+            margin-right: 8px;
+        }
+        
+        /* FAQ Section */
+        .faq {
+            padding: 60px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            margin: 40px 0;
+        }
+        
+        .faq h2 {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.2rem;
+            color: #fff;
+        }
+        
+        .faq-item {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-right: 19px;
+            margin-left: 10px;
+        }
+        
+        .faq-question {
+            padding: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .faq-answer {
+            padding: 0 20px 20px;
+            color: #d1d1d1;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 60px 0 30px;
+            margin-top: 60px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 20px;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 15px;
+            color: #14b89c;
+        }
+        
+        .footer-section p {
+            color: #d1d1d1;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .footer-section p:hover {
+            color: #14b89c;
+        }
+        
+        .footer-bottom {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d1d1d1;
+            text-align: center;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            nav ul {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                padding: 20px;
+                backdrop-filter: blur(10px);
+            }
+            
+            nav ul.show {
+                display: flex;
+            }
+            
+            nav ul li {
+                margin: 15px 0;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .pricing-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .popular::before {
+                right: -25px;
+                font-size: 10px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <span>PiTrust</span> API
+            </div>
+            <nav>
+                <ul id="menu">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">Features</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#" style="color: #14b89c;">Pricing</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Simple, Transparent Pricing</h1>
+            <p>Choose the perfect plan for your business needs. All plans include access to our powerful trust score API.</p>
+        </div>
+    </section>
+
+    <section class="pricing container">
+        <div class="pricing-cards">
+            <!-- Starter Plan -->
+            <div class="pricing-card">
+                <h3>Starter</h3>
+                <div class="price">25 π <span>/month</span></div>
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i> Up to 500 checks / month</li>
+                    <li><i class="fas fa-check-circle"></i> API access with 1 key</li>
+                    <li><i class="fas fa-check-circle"></i> Email support</li>
+                    <li><i class="fas fa-check-circle"></i> Basic documentation</li>
+                </ul>
+                <div class="use-case">
+                    <i class="fas fa-lightbulb"></i> Perfect for small shops, freelancers, or Pi e-commerce stores just starting.
+                </div>
+                <button class="btn" onclick="handleGetStarted()">Get Started</button>
+
+            </div>
+
+            <!-- Growth Plan -->
+            <div class="pricing-card popular">
+                <h3>Growth</h3>
+                <div class="price">100 π <span>/month</span></div>
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i> Up to 5,000 checks / month</li>
+                    <li><i class="fas fa-check-circle"></i> 3 API keys (multi-account support)</li>
+                    <li><i class="fas fa-check-circle"></i> Dashboard with basic analytics</li>
+                    <li><i class="fas fa-check-circle"></i> Priority email support</li>
+                    <li><i class="fas fa-check-circle"></i> Fraud detection trends</li>
+                </ul>
+                <div class="use-case">
+                    <i class="fas fa-lightbulb"></i> Ideal for mid-sized businesses and growing marketplaces.
+                </div>
+                <button class="btn" onclick="handleGetStarted()">Get Started</button>
+
+            </div>
+
+            <!-- Pro Plan -->
+            <div class="pricing-card">
+                <h3>Professional</h3>
+                <div class="price">250 π <span>/month</span></div>
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i> Up to 20,000 checks / month</li>
+                    <li><i class="fas fa-check-circle"></i> 10 API keys (for teams)</li>
+                    <li><i class="fas fa-check-circle"></i> Bulk check (CSV upload)</li>
+                    <li><i class="fas fa-check-circle"></i> Webhooks for real-time alerts</li>
+                    <li><i class="fas fa-check-circle"></i> Priority support</li>
+                    <li><i class="fas fa-check-circle"></i> Batch API endpoint</li>
+                </ul>
+                <div class="use-case">
+                    <i class="fas fa-lightbulb"></i> Designed for bigger trading platforms, lending apps, and escrow services.
+                </div>
+                <button class="btn" onclick="handleGetStarted()">Get Started</button>
+
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div class="pricing-card">
+                <h3>Enterprise</h3>
+                <div class="price">Custom <span></span></div>
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i> Unlimited checks</li>
+                    <li><i class="fas fa-check-circle"></i> Dedicated infrastructure</li>
+                    <li><i class="fas fa-check-circle"></i> SLA & uptime guarantee</li>
+                    <li><i class="fas fa-check-circle"></i> Dedicated account manager</li>
+                    <li><i class="fas fa-check-circle"></i> Advanced analytics dashboard</li>
+                    <li><i class="fas fa-check-circle"></i> Custom integration support</li>
+                </ul>
+                <div class="use-case">
+                    <i class="fas fa-lightbulb"></i> Tailored for banks, Pi-based payroll apps, and large marketplaces.
+                </div>
+                <a href="#" class="btn">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <div
+    style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        flex-direction: row;
+    "
+    >
+        <section class="faq container">
+            <h2>Frequently Asked Questions</h2>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    What payment methods do you accept? <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    We accept Pi Coin for all payments. Enterprise customers may arrange for alternative payment methods.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    Can I change plans anytime? <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Yes, you can upgrade or downgrade your plan at any time. When upgrading, the new rate applies immediately. When downgrading, the change takes effect at the end of your billing cycle.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    Is there a free trial available? <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Yes, we offer a 14-day free trial with access to all Starter plan features. No credit card or Pi payment required.
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    How do API checks work? <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Each time you query our API for a trust score, it counts as one check. Batch operations count as multiple checks based on the number of wallets processed.
+                </div>
+            </div>
+        </section>
+    </div>
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Product</h3>
+                    <p>Features</p>
+                    <p>Pricing</p>
+                    <p>API Documentation</p>
+                    <p>Use Cases</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <p>About Us</p>
+                    <p>Blog</p>
+                    <p>Careers</p>
+                    <p>Contact</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Legal</h3>
+                    <p>Privacy Policy</p>
+                    <p>Terms of Service</p>
+                    <p>Data Processing</p>
+                    <p>Security</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Support</h3>
+                    <p>Help Center</p>
+                    <p>Developer Resources</p>
+                    <p>Status</p>
+                    <p>Contact Support</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 PiTrust API - Trust Infrastructure for Pi Network. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const menu = document.getElementById('menu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            menu.classList.toggle('show');
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!menu.contains(e.target) && e.target !== mobileMenuBtn) {
+                menu.classList.remove('show');
+            }
+        });
+
+        // FAQ toggle functionality
+        const faqQuestions = document.querySelectorAll('.faq-question');
+        
+        faqQuestions.forEach(question => {
+            question.addEventListener('click', () => {
+                const answer = question.nextElementSibling;
+                const icon = question.querySelector('i');
+                
+                // Toggle answer visibility
+                if (answer.style.display === 'block') {
+                    answer.style.display = 'none';
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                } else {
+                    answer.style.display = 'block';
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
