@@ -32,7 +32,7 @@ pi_trust = PiTrustScorer.PiTrustScorer()
 
 @app.route("/validation-key.txt")
 def val():
-    return "ef3e15ffd508dddcf4c5e399afd30cb15758773c05bbeeedb10ea7dd03c6a4051a76218403a9972093120e73839b4f07dd84b3bcfe9db3783640213f14936b96"
+    return "bae0faf3ef29126f7933beea80425419b91a84e7066beab7891364cf9fa034617a41b1a8b89f89ca7160cc080af4c7a98420570dbb516afa7522217b9d6dc14f"
 
 
 @app.route("/")
@@ -236,3 +236,4 @@ def health_check():
 if __name__ == '__main__':
 
     app.run(debug=True, host='0.0.0.0', port=5000)
+
