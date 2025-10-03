@@ -9,19 +9,24 @@
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <script>
-    Pi.init({version: "2.0", sandbox: 'true'});
+    Pi.init({ 
+    version: "2.0", 
+    sandbox: true,
+    scopes: ['payments', 'username']  // Add this line
+    
+});
     
 async function handleGetStarted() {
+    
   // 0️⃣ Make sure Pi SDK exists
   if (typeof window.Pi === "undefined") {
     alert("Please open this app in Pi Browser.");
-    
     return;
   }
 
   try {
     // 1️⃣ Check backend session
-    const scopes = ["username"]; // request username from Pi
+    const scopes = ["username","payments"]; // request username from Pi
     const authResult = await Pi.authenticate(scopes, onIncompletePaymentFound);
     
     const res = await fetch("/api/store-token", {
