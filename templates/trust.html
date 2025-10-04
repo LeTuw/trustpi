@@ -605,7 +605,7 @@
         Pi.createPayment(paymentData, {
             onReadyForServerApproval: async (paymentId) => {
                 console.log("Ready for approval:", paymentId);
-                await fetch("/payment/approve", {
+                await fetch(`${window.location.origin}/payment/complete`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ paymentId })
@@ -615,7 +615,7 @@
             onReadyForServerCompletion: async (paymentId, txid) => {
                 console.log("Ready for completion:", paymentId, txid);
                 try {
-                    const response = await fetch("/payment/complete", {
+                    const response = await fetch(`${window.location.origin}/payment/complete`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ paymentId, txid })
@@ -698,4 +698,5 @@
 </script>
 </body>
 </html>
+
 
