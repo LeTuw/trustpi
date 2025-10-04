@@ -10,10 +10,7 @@
 
     <script>
     Pi.init({ 
-    version: "2.0", 
-    sandbox: true,
-    scopes: ['payments', 'username']  // Add this line
-    
+    version: "2.0"
 });
     
 async function handleGetStarted() {
@@ -39,6 +36,7 @@ async function handleGetStarted() {
     if (authResult) {
       window.location.href = "/dashboard";
     } else {
+
       console.error("Backend verification failed");
     }
 
