@@ -55,6 +55,8 @@ PLAN_CONFIGS = {
     "professional": {"name": "Professional Plan", "price": 100, "duration_days": 30, "max_api_keys": 10, "max_requests": 20000}
 }
 
+print(app.url_map)
+
 def get_user_id():
     user_data = session.get("user")
     if user_data and "uid" in user_data:
@@ -804,4 +806,5 @@ def health_check():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+
 
