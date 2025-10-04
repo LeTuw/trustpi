@@ -11,7 +11,7 @@
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <script>
-        Pi.init({ version: "2.0", sandbox: true });
+        Pi.init({ version: "2.0"});
     </script>
     <style>
         * {
@@ -567,6 +567,7 @@
     const scopes = ["username","payments"]
     Pi.authenticate(scopes, onIncompletePaymentFound);
     console.log("Pi SDK initialized");
+    console.log(scopes)
 
     // Notyf for notifications
     const notyf = new Notyf({
