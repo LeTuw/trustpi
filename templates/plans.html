@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Dashboard - TrustPi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2b60de;
+            --primary-dark: #1a4fc4;
+            --secondary: #14b89c;
+            --dark: #1a2238;
+            --light: #f9f9f9;
+            --gray: #7f8fa6;
+            --danger: #e84118;
+            --warning: #fbc531;
+            --success: #44bd32;
+            --sidebar-width: 250px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: #333;
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar styling */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: white;
+            padding: 20px 0;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+        
+        .logo {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            color: #d1d1d1;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left: 4px solid #14b89c;
+        }
+        
+        .nav-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #14b89c, #2b60de);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .plan-header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .plan-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-active {
+            background: rgba(68, 189, 50, 0.1);
+            color: var(--success);
+        }
+        
+        .badge-expired {
+            background: rgba(232, 65, 24, 0.1);
+            color: var(--danger);
+        }
+        
+        .logout-btn {
+            background: rgba(232, 65, 24, 0.1);
+            color: var(--danger);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        /* Dashboard sections */
+        .dashboard-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .section-action {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-action i {
+            margin-right: 5px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .stat-card.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .stat-card.warning {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* API Keys Section */
+        .api-keys-grid {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .api-key-card {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .api-key-info h4 {
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+        
+        .api-key-value {
+            font-family: monospace;
+            background: #f5f7fb;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px dashed #ddd;
+        }
+        
+        .api-key-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* Chart Container */
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        /* Requests Table */
+        .requests-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .requests-table th,
+        .requests-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .requests-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            background: rgba(68, 189, 50, 0.1);
+            color: var(--success);
+        }
+        
+        .status-error {
+            background: rgba(232, 65, 24, 0.1);
+            color: var(--danger);
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background: rgba(43, 96, 222, 0.1);
+            color: var(--primary);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(43, 96, 222, 0.2);
+        }
+        
+        .btn-danger {
+            background: rgba(232, 65, 24, 0.1);
+            color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar .logo h1, .sidebar .nav-text {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .api-key-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .api-key-actions {
+                align-self: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h1>TrustPi</h1>
+        </div>
+        <a href="/dashboard" class="nav-item">
+            <i class="fas fa-th-large"></i>
+            <span class="nav-text">Dashboard</span>
+        </a>
+        <a href="#" class="nav-item active">
+            <i class="fas fa-cube"></i>
+            <span class="nav-text">Plan Dashboard</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-credit-card"></i>
+            <span class="nav-text">Payments</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-shield-alt"></i>
+            <span class="nav-text">Trust Checks</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-cog"></i>
+            <span class="nav-text">Settings</span>
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="plan-header-info">
+                <div>
+                    <h2 id="plan-name">Growth Plan</h2>
+                    <div id="plan-period" class="user-email">Nov 1, 2023 - Dec 1, 2023</div>
+                </div>
+                <div id="plan-status" class="plan-badge badge-active">Active</div>
+            </div>
+            <button class="logout-btn">
+                <i class="fas fa-arrow-left"></i> Back to Plans
+            </button>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">Usage Overview</h2>
+                <div class="quota" id="usage-quota">1,250/5,000 requests used</div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-chart-line fa-2x"></i>
+                    <div class="stat-value" id="total-requests">1,250</div>
+                    <div class="stat-label">Total Requests</div>
+                </div>
+                <div class="stat-card secondary">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                    <div class="stat-value" id="successful-requests">1,180</div>
+                    <div class="stat-label">Successful</div>
+                </div>
+                <div class="stat-card success">
+                    <i class="fas fa-times-circle fa-2x"></i>
+                    <div class="stat-value" id="failed-requests">70</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                <div class="stat-card warning">
+                    <i class="fas fa-clock fa-2x"></i>
+                    <div class="stat-value" id="remaining-requests">3,750</div>
+                    <div class="stat-label">Remaining</div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="requestsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- API Keys Section -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">API Keys</h2>
+                <a href="#" class="section-action" id="createApiKeyBtn">
+                    <i class="fas fa-plus"></i> Create New API Key
+                </a>
+            </div>
+            
+            <div class="api-keys-grid" id="api-keys-list">
+                <div class="api-key-card">
+                    <div class="api-key-info">
+                        <h4>Production Key</h4>
+                        <div class="api-key-value">pk_live_sk_1234567890abcdef</div>
+                        <small>Created: Nov 1, 2023 • Last used: 2 hours ago</small>
+                    </div>
+                    <div class="api-key-actions">
+                        <button class="btn btn-secondary" onclick="copyApiKey('pk_live_sk_1234567890abcdef')">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button class="btn btn-danger" onclick="revokeApiKey(1)">
+                            <i class="fas fa-trash"></i> Revoke
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="api-key-card">
+                    <div class="api-key-info">
+                        <h4>Test Key</h4>
+                        <div class="api-key-value">pk_test_sk_9876543210fedcba</div>
+                        <small>Created: Nov 5, 2023 • Last used: 5 days ago</small>
+                    </div>
+                    <div class="api-key-actions">
+                        <button class="btn btn-secondary" onclick="copyApiKey('pk_test_sk_9876543210fedcba')">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button class="btn btn-danger" onclick="revokeApiKey(2)">
+                            <i class="fas fa-trash"></i> Revoke
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Requests -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">Recent Requests</h2>
+                <a href="#" class="section-action">
+                    <i class="fas fa-download"></i> Export CSV
+                </a>
+            </div>
+            
+            <table class="requests-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Wallet Address</th>
+                        <th>API Key</th>
+                        <th>Response Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-table-body">
+                    <tr>
+                        <td>2023-11-15 14:30:25</td>
+                        <td>GBYTEZ...WXCVB</td>
+                        <td>Production</td>
+                        <td>320ms</td>
+                        <td><span class="status-badge status-success">Success</span></td>
+                    </tr>
+                    <tr>
+                        <td>2023-11-15 14:25:10</td>
+                        <td>GABCDE...FGHIJ</td>
+                        <td>Production</td>
+                        <td>280ms</td>
+                        <td><span class="status-badge status-success">Success</span></td>
+                    </tr>
+                    <tr>
+                        <td>2023-11-15 14:20:45</td>
+                        <td>GKLMNO...PQRST</td>
+                        <td>Test</td>
+                        <td>450ms</td>
+                        <td><span class="status-badge status-error">Failed</span></td>
+                    </tr>
+                    <tr>
+                        <td>2023-11-15 14:15:30</td>
+                        <td>GUVWXY...ZABCD</td>
+                        <td>Production</td>
+                        <td>310ms</td>
+                        <td><span class="status-badge status-success">Success</span></td>
+                    </tr>
+                    <tr>
+                        <td>2023-11-15 14:10:15</td>
+                        <td>GEFGHI...JKLMN</td>
+                        <td>Production</td>
+                        <td>290ms</td>
+                        <td><span class="status-badge status-success">Success</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Create API Key Modal -->
+    <div class="modal" id="createApiKeyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New API Key</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="key-name">Key Name</label>
+                <input type="text" id="key-name" placeholder="e.g., Production Server, Test Environment">
+            </div>
+            
+            <div class="form-group">
+                <label for="key-type">Key Type</label>
+                <select id="key-type" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    <option value="live">Live (Production)</option>
+                    <option value="test">Test</option>
+                </select>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary close-modal">Cancel</button>
+                <button class="btn btn-primary" id="generateApiKeyBtn">Generate API Key</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart initialization
+        const ctx = document.getElementById('requestsChart').getContext('2d');
+        const requestsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Nov 1', 'Nov 3', 'Nov 5', 'Nov 7', 'Nov 9', 'Nov 11', 'Nov 13', 'Nov 15'],
+                datasets: [{
+                    label: 'Daily Requests',
+                    data: [120, 150, 180, 90, 200, 160, 240, 190],
+                    borderColor: '#2b60de',
+                    backgroundColor: 'rgba(43, 96, 222, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+
+        // Modal functionality
+        const apiKeyModal = document.getElementById('createApiKeyModal');
+        const createApiKeyBtn = document.getElementById('createApiKeyBtn');
+        const closeModalBtns = document.querySelectorAll('.close-modal');
+        
+        createApiKeyBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            apiKeyModal.style.display = 'flex';
+        });
+        
+        closeModalBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                apiKeyModal.style.display = 'none';
+            });
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            if (e.target === apiKeyModal) {
+                apiKeyModal.style.display = 'none';
+            }
+        });
+
+        // API Key functions
+        function copyApiKey(key) {
+            navigator.clipboard.writeText(key).then(() => {
+                alert('API key copied to clipboard!');
+            });
+        }
+
+        function revokeApiKey(keyId) {
+            if (confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+                // API call to revoke key would go here
+                console.log('Revoking API key:', keyId);
+                alert('API key revoked successfully!');
+            }
+        }
+
+        // Generate new API key
+        document.getElementById('generateApiKeyBtn').addEventListener('click', function() {
+            const keyName = document.getElementById('key-name').value;
+            const keyType = document.getElementById('key-type').value;
+            
+            if (!keyName) {
+                alert('Please enter a key name');
+                return;
+            }
+            
+            // Generate mock API key (in real app, this would come from backend)
+            const prefix = keyType === 'live' ? 'pk_live_sk_' : 'pk_test_sk_';
+            const newKey = prefix + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            
+            // Add new key to the list
+            const apiKeysList = document.getElementById('api-keys-list');
+            const newKeyCard = document.createElement('div');
+            newKeyCard.className = 'api-key-card';
+            newKeyCard.innerHTML = `
+                <div class="api-key-info">
+                    <h4>${keyName}</h4>
+                    <div class="api-key-value">${newKey}</div>
+                    <small>Created: Just now • Last used: Never</small>
+                </div>
+                <div class="api-key-actions">
+                    <button class="btn btn-secondary" onclick="copyApiKey('${newKey}')">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button class="btn btn-danger" onclick="revokeApiKey(3)">
+                        <i class="fas fa-trash"></i> Revoke
+                    </button>
+                </div>
+            `;
+            
+            apiKeysList.prepend(newKeyCard);
+            apiKeyModal.style.display = 'none';
+            alert('New API key created successfully! Make sure to copy it now as it won\'t be shown again.');
+        });
+
+        // Load plan data from URL parameter or default
+        function loadPlanData() {
+            // In a real app, you'd fetch this from your API based on plan ID
+            const planData = {
+                name: "Growth Plan",
+                status: "active",
+                start_date: "2023-11-01",
+                end_date: "2023-12-01",
+                price: 100,
+                total_requests: 1250,
+                successful_requests: 1180,
+                failed_requests: 70,
+                max_requests: 5000
+            };
+            
+            document.getElementById('plan-name').textContent = planData.name;
+            document.getElementById('plan-period').textContent = 
+                `${new Date(planData.start_date).toLocaleDateString()} - ${new Date(planData.end_date).toLocaleDateString()}`;
+            
+            document.getElementById('total-requests').textContent = planData.total_requests.toLocaleString();
+            document.getElementById('successful-requests').textContent = planData.successful_requests.toLocaleString();
+            document.getElementById('failed-requests').textContent = planData.failed_requests.toLocaleString();
+            document.getElementById('remaining-requests').textContent = (planData.max_requests - planData.total_requests).toLocaleString();
+            
+            document.getElementById('usage-quota').textContent = 
+                `${planData.total_requests.toLocaleString()}/${planData.max_requests.toLocaleString()} requests used`;
+        }
+
+        // Initialize page
+        loadPlanData();
+    </script>
+</body>
+</html>
