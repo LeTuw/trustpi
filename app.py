@@ -42,92 +42,163 @@ def get_db_connection():
 
 
 # Plan configurations
+# Plan configurations
 PLAN_CONFIGS = {
-    "starter": {"name": "Starter Plan", "price": 25, "duration_days": 30, "max_api_keys": 1, "max_requests": 500},
-    "growth": {"name": "Growth Plan", "price": 50, "duration_days": 30, "max_api_keys": 3, "max_requests": 5000},
-    "professional": {"name": "Professional Plan", "price": 100, "duration_days": 30, "max_api_keys": 10, "max_requests": 20000}
+    "starter": {
+        "name": "Starter Plan", 
+        "price": 25, 
+        "duration_days": 30, 
+        "max_api_keys": 1, 
+        "max_requests": 500,
+        "max_shares": 1
+    },
+    "growth": {
+        "name": "Growth Plan", 
+        "price": 50, 
+        "duration_days": 30, 
+        "max_api_keys": 3, 
+        "max_requests": 5000,
+        "max_shares": 3
+    },
+    "professional": {
+        "name": "Professional Plan", 
+        "price": 100, 
+        "duration_days": 30, 
+        "max_api_keys": 10, 
+        "max_requests": 20000,
+        "max_shares": 10
+    }
 }
 
-def get_user_id():
-    user_data = session.get("user")
-    if user_data and "uid" in user_data:
+import requests
+from flask import jsonify
+
+def get_user_id(token):
+    if not token:
+        return None
+
+    try:
+        # --- Verify the token with Pi Network API ---
+        res = requests.get(
+            "https://api.minepi.com/v2/me",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=5
+        )
+
+        if res.status_code != 200:
+            return None
+
+        user_data = res.json()
+        uid = user_data.get("uid")
+        username = user_data.get("username")
+
+        if not uid or not username:
+            return None
+
+        # --- Look for existing user or create one ---
         conn = get_db_connection()
         cursor = conn.cursor()
-        
-        cursor.execute("SELECT id FROM users WHERE pi_uid = ?", (user_data["uid"],))
-        # cursor.execute("SELECT id FROM users WHERE id = 2")
+        cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
-        
+
         if user:
-            conn.close()
-            return user[0]
+            user_id = user[0]
         else:
             cursor.execute(
                 "INSERT INTO users (pi_uid, username) VALUES (?, ?)",
-                (user_data["uid"], user_data.get("username", "Unknown"))
+                (uid, username)
             )
-            new_user_id = cursor.lastrowid
             conn.commit()
-            conn.close()
-            return new_user_id
-    return None
+            user_id = cursor.lastrowid
+
+        conn.close()
+        return user_id
+
+    except Exception as e:
+        print(f"Error verifying Pi token: {e}")
+        return None
+
 
 @app.route("/api/plans/my", methods=["GET"])
 def get_user_plans():
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_id = get_user_id(token)
+    
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Get plans owned by the user
-    cursor.execute("""
-        SELECT p.*, COALESCE(SUM(ak.usage_count), 0) as total_usage, 'owner' as access_role, NULL as owner_username
-        FROM plans p
-        LEFT JOIN apikeys ak ON p.id = ak.plan_id
-        WHERE p.user_id = ? 
-        GROUP BY p.id
-    """, (user_id,))
+    try:
+        # Get plans owned by the user - format dates as ISO strings directly in SQL
+        cursor.execute("""
+            SELECT 
+                p.id, p.user_id, p.tier, p.price, p.status, 
+                strftime('%Y-%m-%dT%H:%M:%S', p.start_date) as start_date,
+                strftime('%Y-%m-%dT%H:%M:%S', p.end_date) as end_date,
+                p.payment_txid,
+                strftime('%Y-%m-%dT%H:%M:%S', p.created_at) as created_at,
+                p.requests, p.max_shares,
+                'owner' as access_role, 
+                NULL as owner_username
+            FROM plans p
+            WHERE p.user_id = ?
+            ORDER BY p.created_at DESC
+        """, (user_id,))
+        
+        owned_plans = [dict(row) for row in cursor.fetchall()]
+        
+        # Get plans shared with the user
+        cursor.execute("SELECT username FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        if user:
+            username = user[0]
+            cursor.execute("""
+                SELECT 
+                    p.id, p.user_id, p.tier, p.price, p.status, 
+                    strftime('%Y-%m-%dT%H:%M:%S', p.start_date) as start_date,
+                    strftime('%Y-%m-%dT%H:%M:%S', p.end_date) as end_date,
+                    p.payment_txid,
+                    strftime('%Y-%m-%dT%H:%M:%S', p.created_at) as created_at,
+                    p.requests, p.max_shares,
+                    ps.role as access_role, 
+                    u.username as owner_username
+                FROM plans p
+                JOIN plan_shares ps ON p.id = ps.plan_id
+                JOIN users u ON p.user_id = u.id
+                WHERE ps.shared_with_username = ?
+                AND p.status = 'active'
+                ORDER BY p.created_at DESC
+            """, (username,))
+            
+            shared_plans = [dict(row) for row in cursor.fetchall()]
+        else:
+            shared_plans = []
+        
+        # Combine both lists
+        all_plans = owned_plans + shared_plans
+        
+        conn.close()
+        return jsonify(all_plans)
+        
+    except Exception as e:
+        conn.close()
+        print(f"Error in /api/plans/my: {str(e)}")  # Debug log
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
     
-    owned_plans = []
-    for row in cursor.fetchall():
-        plan = dict(row)
-        if plan["price"]:
-            plan["price"] = float(plan["price"])
-        owned_plans.append(plan)
-    
-    # Get plans shared with the user, including owner username
-    cursor.execute("""
-        SELECT p.*, COALESCE(SUM(ak.usage_count), 0) as total_usage, ps.role as access_role, u.username as owner_username
-        FROM plans p
-        JOIN plan_shares ps ON p.id = ps.plan_id
-        LEFT JOIN apikeys ak ON p.id = ak.plan_id
-        LEFT JOIN users u ON p.user_id = u.id
-        WHERE ps.shared_with_username = (SELECT username FROM users WHERE id = ?)
-        AND p.status = 'active'
-        GROUP BY p.id
-    """, (user_id,))
-    
-    shared_plans = []
-    for row in cursor.fetchall():
-        plan = dict(row)
-        if plan["price"]:
-            plan["price"] = float(plan["price"])
-        shared_plans.append(plan)
-    
-    # Combine both lists
-    all_plans = owned_plans + shared_plans
-    
-    # Sort by creation date (most recent first)
-    all_plans.sort(key=lambda x: x['created_at'], reverse=True)
-    
-    conn.close()
-    return jsonify(all_plans)
-
 @app.route("/api/plans/activate", methods=["POST"])
 def activate_plan():
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_id = get_user_id(token)
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
     
@@ -138,20 +209,35 @@ def activate_plan():
     if not plan_id or not txid:
         return jsonify({"error": "Missing plan_id or txid"}), 400
     
-    if plan_id not in PLAN_CONFIGS:
+    # Map frontend plan IDs to backend config
+    plan_mapping = {
+        "starter": "starter",
+        "growth": "growth", 
+        "professional": "professional"
+    }
+    
+    backend_plan_id = plan_mapping.get(plan_id)
+    if not backend_plan_id or backend_plan_id not in PLAN_CONFIGS:
         return jsonify({"error": "Invalid plan ID"}), 400
     
-    plan_info = PLAN_CONFIGS[plan_id]
+    plan_info = PLAN_CONFIGS[backend_plan_id]
     start_date = datetime.now()
     end_date = start_date + timedelta(days=plan_info["duration_days"])
+    
+    # Add max_shares based on plan tier
+    max_shares = {
+        "starter": 1,
+        "growth": 3, 
+        "professional": 10
+    }.get(backend_plan_id, 1)
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
     try:
         cursor.execute("""
-            INSERT INTO plans (user_id, tier, price, status, start_date, end_date, payment_txid, requests)
-            VALUES (?, ?, ?, 'active', ?, ?, ?, ?)
+            INSERT INTO plans (user_id, tier, price, status, start_date, end_date, payment_txid, requests, max_shares)
+            VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?)
         """, (
             user_id,
             plan_info["name"], 
@@ -159,12 +245,28 @@ def activate_plan():
             start_date, 
             end_date, 
             txid, 
-            plan_info["max_requests"]
+            plan_info["max_requests"],
+            max_shares  # Add this
         ))
         
+        plan_db_id = cursor.lastrowid
         conn.commit()
         conn.close()
-        return jsonify({"success": True, "message": "Plan activated successfully"})
+        
+        return jsonify({
+            "success": True, 
+            "message": "Plan activated successfully",
+            "plan": {
+                "id": plan_db_id,
+                "tier": plan_info["name"],
+                "price": plan_info["price"],
+                "status": "active",
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "requests": plan_info["max_requests"],
+                "max_shares": max_shares
+            }
+        })
     
     except Exception as e:
         conn.rollback()
@@ -194,7 +296,12 @@ def log_request(plan_id, wallet_address, api_key, response_time, status):
 
 @app.route("/api/plans/<int:plan_id>/requests", methods=["GET"])
 def get_plan_requests(plan_id):
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_id = get_user_id(token)
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
     
@@ -353,7 +460,12 @@ def generate_api_key(key_type="live"):
 
 @app.route("/api/apikeys", methods=["GET"])
 def get_api_keys():
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_id = get_user_id(token)
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
     
@@ -378,7 +490,12 @@ def get_api_keys():
 
 @app.route("/api/apikeys", methods=["POST"])
 def create_api_key():
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_id = get_user_id(token)
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
     
@@ -473,7 +590,12 @@ def create_api_key():
 
 @app.route("/api/apikeys/<int:api_key_id>", methods=["DELETE"])
 def revoke_api_key(api_key_id):
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_id = get_user_id(token)
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
     
@@ -518,7 +640,12 @@ def revoke_api_key(api_key_id):
         
 @app.route("/api/plans/<int:plan_id>/apikeys", methods=["GET"])
 def get_plan_api_keys(plan_id):
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_id = get_user_id(token)
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
     
@@ -602,7 +729,12 @@ def increment_api_usage(api_key_id):
 
 @app.route("/api/plans/<int:plan_id>/shares", methods=["GET"])
 def get_plan_shares(plan_id):
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_id = get_user_id(token)
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
     
@@ -615,10 +747,11 @@ def get_plan_shares(plan_id):
         conn.close()
         return jsonify({"error": "Plan not found"}), 404
     
+    # Fixed JOIN: join on username, not pi_uid
     cursor.execute("""
         SELECT ps.*, u.username as shared_with_username_display
         FROM plan_shares ps
-        LEFT JOIN users u ON u.pi_uid = ps.shared_with_username
+        LEFT JOIN users u ON u.username = ps.shared_with_username
         WHERE ps.plan_id = ?
         ORDER BY ps.shared_at DESC
     """, (plan_id,))
@@ -629,7 +762,12 @@ def get_plan_shares(plan_id):
 
 @app.route("/api/plans/<int:plan_id>/shares", methods=["POST"])
 def add_plan_share(plan_id):
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    user_id = get_user_id(token)
     if not user_id:
         return jsonify({"error": "User not authenticated"}), 401
     
@@ -658,19 +796,22 @@ def add_plan_share(plan_id):
         
         plan = cursor.fetchone()
         if not plan:
+            conn.close()
             return jsonify({"error": "Plan not found"}), 404
         
-        # Check if user exists in our system
-        cursor.execute("SELECT id FROM users WHERE username = ? OR pi_uid = ?", (username, username))
+        # Check if user exists in our system by username
+        cursor.execute("SELECT id, username FROM users WHERE username = ?", (username,))
         shared_user = cursor.fetchone()
         
         if not shared_user:
-            return jsonify({"error": "User not found in PiTrust system"}), 404
+            conn.close()
+            return jsonify({"error": "User not found in PiTrust system. They need to log in at least once."}), 404
         
         # Check if already shared
         cursor.execute("SELECT id FROM plan_shares WHERE plan_id = ? AND shared_with_username = ?", 
                       (plan_id, username))
         if cursor.fetchone():
+            conn.close()
             return jsonify({"error": "Plan already shared with this user"}), 400
         
         # Check share limits based on plan tier
@@ -682,6 +823,7 @@ def add_plan_share(plan_id):
         }.get(plan_tier, 1)
         
         if plan["current_shares"] >= max_shares:
+            conn.close()
             return jsonify({
                 "error": f"Maximum shares reached for {plan_tier} plan ({max_shares} shares)"
             }), 400
@@ -704,9 +846,16 @@ def add_plan_share(plan_id):
 
 @app.route("/api/plans/<int:plan_id>/shares/<int:share_id>", methods=["DELETE"])
 def remove_plan_share(plan_id, share_id):
-    user_id = get_user_id()
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid token"}), 401
+
+    token = auth_header.split("Bearer ")[1]
+    
+    # --- Verify token and get user_id ---
+    user_id = get_user_id(token)  # This line was missing!
     if not user_id:
-        return jsonify({"error": "User not authenticated"}), 401
+        return jsonify({"error": "Invalid or expired token"}), 401
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -715,11 +864,13 @@ def remove_plan_share(plan_id, share_id):
         # Verify plan belongs to user
         cursor.execute("SELECT id FROM plans WHERE id = ? AND user_id = ?", (plan_id, user_id))
         if not cursor.fetchone():
-            return jsonify({"error": "Plan not found"}), 404
+            conn.close()
+            return jsonify({"error": "Plan not found or you don't own this plan"}), 404
         
         # Verify share exists for this plan
         cursor.execute("SELECT id FROM plan_shares WHERE id = ? AND plan_id = ?", (share_id, plan_id))
         if not cursor.fetchone():
+            conn.close()
             return jsonify({"error": "Share not found"}), 404
         
         cursor.execute("DELETE FROM plan_shares WHERE id = ?", (share_id,))
