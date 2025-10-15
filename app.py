@@ -28,13 +28,6 @@ app.config["SESSION_COOKIE_SECURE"] = True  # if HTTPS
 def make_session_non_permanent():
     session.permanent = False
 
-@app.before_request
-def log_request_info():
-    print("➡️ Incoming request path:", request.path)
-    print("➡️ Full URL:", request.url)
-    print("➡️ Method:", request.method)
-
-
 Session(app)
 CORS(app)
 
@@ -54,8 +47,6 @@ PLAN_CONFIGS = {
     "growth": {"name": "Growth Plan", "price": 50, "duration_days": 30, "max_api_keys": 3, "max_requests": 5000},
     "professional": {"name": "Professional Plan", "price": 100, "duration_days": 30, "max_api_keys": 10, "max_requests": 20000}
 }
-
-print(app.url_map)
 
 def get_user_id():
     user_data = session.get("user")
@@ -291,13 +282,21 @@ def store_token():
 
 @app.route("/api/verify-auth", methods=["POST"])
 def verify_auth():
-    user_data = verify_pi_token(session.get("access_token"))
+    data = request.get_json()
+    token = data.get("token")
+
+    if not token:
+        return jsonify({"error": "No token provided"}), 400
+
+    user_data = verify_pi_token(token)
     if user_data:
         session["user"] = {
             "uid": user_data.get("uid"),
             "username": user_data.get("username")
         }
+        session["access_token"] = token
         return jsonify({"success": True, "user": session["user"]})
+
     return jsonify({"error": "Invalid token"}), 401
 
 @app.route("/api/logout", methods=["POST"])
@@ -804,8 +803,5 @@ def complete():
 def health_check():
     return jsonify({"status": "healthy", "service": "PiTrust API"})
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
-
-
-
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
