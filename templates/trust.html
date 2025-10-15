@@ -11,7 +11,7 @@
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <script>
-        Pi.init({ version: "2.0"});
+        Pi.init({ version: "2.0", sandbox:true});
     </script>
     <style>
         * {
@@ -596,7 +596,7 @@
         document.getElementById('loadingSection').style.display = 'block';
 
         const paymentData = {
-            amount: 1,
+            amount: 0.1,
             memo: "TrustPi check",
             metadata: { walletAddress }
         };
@@ -698,3 +698,4 @@
 </script>
 </body>
 </html>
+
