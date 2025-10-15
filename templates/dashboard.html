@@ -841,11 +841,23 @@ verifyAuth();
         Pi.init({version: '2.0', sandbox: 'true'})
         function onIncompletePaymentFound(payment) {
             console.log("Incomplete payment:", payment);
-        }   
-        const scopes = ["username","payments"]
-        Pi.authenticate(scopes, onIncompletePaymentFound);
-        console.log("Pi:",Pi)
+        }
+        
+        async function initializePiSDK() {
+            try {
+                const scopes = ["username", "payments"];
+                piUser = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                piAuthenticated = true;
+                console.log("Pi SDK authenticated successfully:", piUser);
+            } catch (error) {
+                console.error("Pi SDK authentication failed:", error);
+                piAuthenticated = false;
+                alert("Failed to authenticate with Pi Network. Some features may not work.");
+            }
+        }
 
+        // Call initialization immediately
+        initializePiSDK();
         // Navigation functions
         function setActiveNav(navId) {
             // Remove active class from all nav items
