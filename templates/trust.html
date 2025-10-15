@@ -11,7 +11,7 @@
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <script>
-        Pi.init({ version: "2.0", sandbox:true});
+        Pi.init({ version: "2.0"});
     </script>
     <style>
         * {
@@ -560,7 +560,7 @@
         }
     });
 
-    Pi.init({ version: "2.0", sandbox: true });
+    Pi.init({ version: "2.0" });
     function onIncompletePaymentFound(payment) {
         console.log("Incomplete payment:", payment);
     }   
@@ -583,8 +583,6 @@
 
     // Form submission
     document.getElementById('checkbtn').addEventListener('click', async function(e) {
-
-        alert("clicked")
 
         const walletAddress = document.getElementById('walletAddress').value.trim();
         if (!isValidWallet(walletAddress)) {
@@ -698,4 +696,3 @@
 </script>
 </body>
 </html>
-
