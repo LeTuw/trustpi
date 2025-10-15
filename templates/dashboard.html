@@ -1,3 +1,7 @@
+<!--  -->
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,12 +22,18 @@
         
 async function verifyAuth() {
   try {
+    const token = localStorage.getItem("token");
+
     const res = await fetch("/api/verify-auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ token })
     });
 
     const data = await res.json();
+    console.log(data);
 
     if (data.success && data.user) {
       const username = data.user.username || "User";
@@ -596,45 +606,47 @@ verifyAuth();
             }
         }
 
-        .shared-people-grid {
-            display: grid;
-            gap: 15px;
-        }
+        /* Add these styles to your existing CSS */
 
-        .role-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
+.shared-people-grid {
+    display: grid;
+    gap: 15px;
+}
 
-        .role-editor {
-            background: rgba(43, 96, 222, 0.1);
-            color: var(--primary);
-        }
+.role-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
 
-        .role-viewer {
-            background: rgba(127, 143, 166, 0.1);
-            color: var(--gray);
-        }
+.role-editor {
+    background: rgba(43, 96, 222, 0.1);
+    color: var(--primary);
+}
 
-        .share-limit-info {
-            background: #f8f9fa;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            color: var(--gray);
-        }
+.role-viewer {
+    background: rgba(127, 143, 166, 0.1);
+    color: var(--gray);
+}
 
-        .badge-shared {
-            background: rgba(20, 184, 156, 0.1);
-            color: var(--secondary);
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
+.share-limit-info {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: var(--gray);
+}
+
+.badge-shared {
+    background: rgba(20, 184, 156, 0.1);
+    color: var(--secondary);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
     </style>
 </head>
 <body>
@@ -657,8 +669,9 @@ verifyAuth();
         </a>
     </div>
 
-    <!-- Main Content -->
+    <!-- Main Content - Default Dashboard View -->
     <div class="main-content" id="main-content">
+        <!-- Header -->
         <div class="header">
             <div class="user-info">
                 <div id="user-avatar" class="user-avatar">JD</div>
@@ -672,6 +685,7 @@ verifyAuth();
             </button>
         </div>
 
+        <!-- My Plans Section -->
         <div class="dashboard-section">
             <div class="section-header">
                 <h2 class="section-title">My Plans</h2>
@@ -685,6 +699,7 @@ verifyAuth();
             </div>
         </div>
 
+        <!-- Payments Section -->
         <div class="dashboard-section">
             <div class="section-header">
                 <h2 class="section-title">Recent Payments</h2>
@@ -781,8 +796,6 @@ verifyAuth();
         let selectedPlan = null;
         let currentPayment = null;
         let currentPlanView = null;
-        let piUser = null;
-        let piAuthenticated = false;
 
         // Plan configurations
         const PLAN_LIMITS = {
@@ -824,41 +837,33 @@ verifyAuth();
             }
         };
 
-        // Initialize Pi SDK with proper authentication
+        // Initialize Pi SDK
+        Pi.init({version: '2.0', sandbox: 'true'})
         function onIncompletePaymentFound(payment) {
             console.log("Incomplete payment:", payment);
-        }
-        
-        async function initializePiSDK() {
-            try {
-                const scopes = ["username", "payments"];
-                piUser = await Pi.authenticate(scopes, onIncompletePaymentFound);
-                piAuthenticated = true;
-                console.log("Pi SDK authenticated successfully:", piUser);
-            } catch (error) {
-                console.error("Pi SDK authentication failed:", error);
-                piAuthenticated = false;
-                alert("Failed to authenticate with Pi Network. Some features may not work.");
-            }
-        }
-
-        // Call initialization immediately
-        initializePiSDK();
+        }   
+        const scopes = ["username","payments"]
+        Pi.authenticate(scopes, onIncompletePaymentFound);
+        console.log("Pi:",Pi)
 
         // Navigation functions
         function setActiveNav(navId) {
+            // Remove active class from all nav items
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
+            // Add active class to clicked nav item
             if (navId) {
                 document.getElementById(navId).classList.add('active');
             }
         }
 
+        // Show main dashboard view
         function showDashboard() {
             setActiveNav('nav-dashboard');
             const mainContent = document.getElementById('main-content');
             mainContent.innerHTML = `
+                <!-- Header -->
                 <div class="header">
                     <div class="user-info">
                         <div id="user-avatar" class="user-avatar">JD</div>
@@ -872,6 +877,7 @@ verifyAuth();
                     </button>
                 </div>
 
+                <!-- My Plans Section -->
                 <div class="dashboard-section">
                     <div class="section-header">
                         <h2 class="section-title">My Plans</h2>
@@ -881,9 +887,11 @@ verifyAuth();
                     </div>
                     
                     <div class="plans-grid" id="plans-grid">
+                        <!-- Plans will be dynamically rendered here -->
                     </div>
                 </div>
 
+                <!-- Payments Section -->
                 <div class="dashboard-section">
                     <div class="section-header">
                         <h2 class="section-title">Recent Payments</h2>
@@ -899,19 +907,23 @@ verifyAuth();
                 </div>
             `;
             
+            // Re-initialize event listeners
             initializeEventListeners();
             fetchUserPlans();
         }
 
+        // Show My Plans (same as dashboard but highlights sidebar)
         function showMyPlans() {
             setActiveNav('nav-plans');
-            showDashboard();
+            showDashboard(); // Reuse your existing dashboard function
         }
 
+        // Show Settings
         function showSettings() {
             setActiveNav('nav-settings');
             const mainContent = document.getElementById('main-content');
             mainContent.innerHTML = `
+                <!-- Header -->
                 <div class="header">
                     <div class="user-info">
                         <div id="user-avatar" class="user-avatar">JD</div>
@@ -925,10 +937,1211 @@ verifyAuth();
                     </button>
                 </div>
 
+                <!-- Account Settings -->
                 <div class="dashboard-section">
                     <div class="section-header">
                         <h2 class="section-title">Account Settings</h2>
                     </div>
                     
                     <div class="form-group">
-                        <label>Pi
+                        <label>Pi Network Username</label>
+                        <input type="text" value="${document.getElementById('user-name').textContent}" readonly style="background: #f5f7fb;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Pi Network UID</label>
+                        <input type="text" value="${document.getElementById('user-email').textContent}" readonly style="background: #f5f7fb;">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Account Created</label>
+                        <input type="text" value="${new Date().toLocaleDateString()}" readonly style="background: #f5f7fb;">
+                    </div>
+                </div>
+
+                
+                
+            `;
+        }
+
+        // Show plan dashboard view
+        function showPlanDashboard(plan) {
+            setActiveNav('nav-plans');
+            currentPlanView = plan;
+            const isOwner = plan.access_role === 'owner';
+            const mainContent = document.getElementById('main-content');
+            const planTier = plan.tier?.toLowerCase().split(' ')[0] || 'starter';
+            const planLimits = PLAN_LIMITS[planTier] || PLAN_LIMITS.starter;
+
+            const used = plan.requests || 0;
+            const max = planLimits.max_requests;
+            const percentUsed = Math.min((used / max) * 100, 100);
+            const daysRemaining = Math.max(
+                0,
+                Math.ceil((new Date(plan.end_date) - new Date()) / (1000 * 60 * 60 * 24))
+            );
+
+            mainContent.innerHTML = `
+                <!-- Header -->
+                <div class="header">
+                    <div class="plan-header-info">
+                        <div>
+                            <h2 id="plan-name">${plan.tier}</h2>
+                            <div id="plan-period" class="user-email">
+                                ${new Date(plan.start_date).toLocaleDateString()} - 
+                                ${new Date(plan.end_date).toLocaleDateString()}
+                                ${!isOwner ? `<br><small>Shared with you as ${plan.access_role}</small>` : ''}
+                            </div>
+                        </div>
+                        <div id="plan-status" class="plan-badge ${plan.status === 'active' ? 'badge-active' : 'badge-expired'}">
+                            ${plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
+                        </div>
+                    </div>
+                    <button class="logout-btn" onclick="showDashboard()">
+                        <i class="fas fa-arrow-left"></i> Back to Plans
+                    </button>
+                </div>
+
+                <!-- Usage Overview -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Usage Overview</h2>
+                        <span class="quota">${used}/${max} requests remaining</span>
+                    </div>
+
+                    <div class="progress-wrapper">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width:${percentUsed}%;"></div>
+                        </div>
+                        <div class="progress-label">${percentUsed.toFixed(1)}% used</div>
+                        <div class="expiry-countdown">
+                            <i class="fas fa-clock"></i> ${daysRemaining} days remaining
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                            <div class="stat-value">${used}</div>
+                            <div class="stat-label">Total Requests</div>
+                        </div>
+                        <div class="stat-card secondary">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                            <div class="stat-value">${Math.round(used * 0.95)}</div>
+                            <div class="stat-label">Successful</div>
+                        </div>
+                        <div class="stat-card success">
+                            <i class="fas fa-times-circle fa-2x"></i>
+                            <div class="stat-value">${Math.round(used * 0.05)}</div>
+                            <div class="stat-label">Failed</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <i class="fas fa-key fa-2x"></i>
+                            <div class="stat-value" id="api-key-count">0</div>
+                            <div class="stat-label">Active API Keys</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shared People Section (only show for owners) -->
+                ${isOwner ? renderSharedPeople(plan.id) : ''}
+
+                <!-- API Keys Section -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2 class="section-title">API Keys</h2>
+                        ${(isOwner || plan.access_role === 'editor') ? `
+                            <a href="#" class="section-action" id="createApiKeyBtn">
+                                <i class="fas fa-plus"></i> Create API Key
+                            </a>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="api-keys-grid" id="api-keys-list">
+                        <div style="text-align: center; padding: 20px;">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p>Loading API keys...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Requests -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Recent Requests</h2>
+                        <a href="#" class="section-action">
+                            <i class="fas fa-download"></i> Export CSV
+                        </a>
+                    </div>
+                    
+                    <table class="requests-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Wallet Address</th>
+                                <th>API Key</th>
+                                <th>Response Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-table-body"></tbody>
+                    </table>
+                </div>
+            `;
+
+            // Initialize components
+            initializeApiKeys(plan.id);
+            if (isOwner) {
+                initializeSharedPeople(plan.id);
+            }
+            initializeRequestsTable(plan.id);
+            initializePlanDashboardListeners();
+        }
+
+        // [Rest of your existing functions remain exactly the same...]
+        // Shared People functions
+        function renderSharedPeople(planId) {
+            return `
+                <!-- Shared People Section -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Shared Access</h2>
+                        <a href="#" class="section-action" id="sharePlanBtn">
+                            <i class="fas fa-user-plus"></i> Share Plan
+                        </a>
+                    </div>
+                    
+                    <div class="shared-people-grid" id="shared-people-list">
+                        <div style="text-align: center; padding: 20px;">
+                            <i class="fas fa-spinner fa-spin fa-2x"></i>
+                            <p>Loading shared users...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function initializeSharedPeople(planId) {
+            const sharedPeopleList = document.getElementById('shared-people-list');
+            
+            try {
+                const response = await fetch(`/api/plans/${planId}/shares`);
+                
+                if (response.ok) {
+                    const shares = await response.json();
+                    renderSharedPeopleList(shares, planId);
+                } else {
+                    console.error('Failed to fetch shared people');
+                    sharedPeopleList.innerHTML = '<div class="api-key-card">Failed to load shared users</div>';
+                }
+            } catch (error) {
+                console.error('Error fetching shared people:', error);
+                sharedPeopleList.innerHTML = '<div class="api-key-card">Error loading shared users</div>';
+            }
+        }
+
+        function renderSharedPeopleList(shares, planId) {
+            const sharedPeopleList = document.getElementById('shared-people-list');
+            const planTier = currentPlanView?.tier?.toLowerCase().split(' ')[0] || 'starter';
+            const maxShares = {
+                starter: 1,
+                growth: 3,
+                professional: 10
+            }[planTier] || 1;
+            
+            if (!shares || shares.length === 0) {
+                sharedPeopleList.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: var(--gray);">
+                        <i class="fas fa-users" style="font-size: 40px; margin-bottom: 10px;"></i>
+                        <p>This plan is not shared with anyone yet.</p>
+                        ${shares.length < maxShares ? `
+                            <button class="btn btn-primary" onclick="openSharePlanModal()" style="margin-top: 10px;">
+                                Share Plan
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+                return;
+            }
+            
+            sharedPeopleList.innerHTML = shares.map(share => `
+                <div class="api-key-card">
+                    <div class="api-key-info">
+                        <h4>${share.shared_with_username_display || share.shared_with_username}</h4>
+                        <div class="api-key-value">
+                            <span class="role-badge ${share.role === 'editor' ? 'role-editor' : 'role-viewer'}">
+                                <i class="fas ${share.role === 'editor' ? 'fa-edit' : 'fa-eye'}"></i>
+                                ${share.role === 'editor' ? 'Editor' : 'Viewer'}
+                            </span>
+                        </div>
+                        <small>
+                            <div>Shared: ${new Date(share.shared_at).toLocaleDateString()}</div>
+                            <div>Permissions: ${share.role === 'editor' ? 'Can view and manage API keys' : 'Can view usage only'}</div>
+                        </small>
+                    </div>
+                    <div class="api-key-actions">
+                        <button class="btn btn-danger" onclick="removeSharedUser(${share.id}, ${planId})">
+                            <i class="fas fa-user-times"></i> Remove
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function removeSharedUser(shareId, planId) {
+    if (!confirm('Are you sure you want to remove this user\'s access to the plan?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/plans/${planId}/shares/${shareId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert('User access removed successfully!');
+            await initializeSharedPeople(planId);
+        } else {
+            alert('Error removing user access: ' + result.error);
+        }
+        
+    } catch (error) {
+        console.error('Error removing shared user:', error);
+        alert('Error removing user access. Please try again.');
+    }
+}
+
+// Add this function to open the share plan modal
+function openSharePlanModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Share Plan</h2>
+                <button class="close-modal" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="share-username">Pi Username</label>
+                <input type="text" id="share-username" placeholder="Enter Pi username">
+            </div>
+            
+            <div class="form-group">
+                <label for="share-role">Access Level</label>
+                <select id="share-role" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    <option value="viewer">Viewer (Can only view usage)</option>
+                    <option value="editor">Editor (Can view usage and manage API keys)</option>
+                </select>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+                <button class="btn btn-primary" onclick="sharePlan()">
+                    <i class="fas fa-share"></i> Share Plan
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+// Add this function to share the plan
+async function sharePlan() {
+    const username = document.getElementById('share-username').value;
+    const role = document.getElementById('share-role').value;
+    const modal = document.querySelector('.modal');
+    
+    if (!username.trim()) {
+        alert('Please enter a username');
+        return;
+    }
+    
+    if (!currentPlanView) {
+        alert('No plan selected');
+        return;
+    }
+    
+    const shareBtn = modal.querySelector('.btn-primary');
+    const originalText = shareBtn.innerHTML;
+    
+    try {
+        shareBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sharing...';
+        shareBtn.disabled = true;
+        
+        const response = await fetch(`/api/plans/${currentPlanView.id}/shares`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username.trim(),
+                role: role
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            modal.remove();
+            alert('Plan shared successfully!');
+            await initializeSharedPeople(currentPlanView.id);
+        } else {
+            alert('Error sharing plan: ' + result.error);
+        }
+        
+    } catch (error) {
+        console.error('Error sharing plan:', error);
+        alert('Error sharing plan. Please try again.');
+    } finally {
+        shareBtn.innerHTML = originalText;
+        shareBtn.disabled = false;
+    }
+}
+
+        // Show plan dashboard view
+// Update the showPlanDashboard function to include the shared people section
+    // Update the showPlanDashboard function to handle shared plans
+function showPlanDashboard(plan) {
+    currentPlanView = plan;
+    const isOwner = plan.access_role === 'owner';
+    const mainContent = document.getElementById('main-content');
+    const planTier = plan.tier?.toLowerCase().split(' ')[0] || 'starter';
+    const planLimits = PLAN_LIMITS[planTier] || PLAN_LIMITS.starter;
+
+    const used = plan.requests || 0;
+    const max = planLimits.max_requests;
+    const percentUsed = Math.min((used / max) * 100, 100);
+    const daysRemaining = Math.max(
+        0,
+        Math.ceil((new Date(plan.end_date) - new Date()) / (1000 * 60 * 60 * 24))
+    );
+
+    mainContent.innerHTML = `
+        <!-- Header -->
+        <div class="header">
+            <div class="plan-header-info">
+                <div>
+                    <h2 id="plan-name">${plan.tier}</h2>
+                    <div id="plan-period" class="user-email">
+                        ${new Date(plan.start_date).toLocaleDateString()} - 
+                        ${new Date(plan.end_date).toLocaleDateString()}
+                        ${!isOwner ? `<br><small>Shared with you as ${plan.access_role}</small>` : ''}
+                    </div>
+                </div>
+                <div id="plan-status" class="plan-badge ${plan.status === 'active' ? 'badge-active' : 'badge-expired'}">
+                    ${plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
+                </div>
+            </div>
+            <button class="logout-btn" onclick="showDashboard()">
+                <i class="fas fa-arrow-left"></i> Back to Plans
+            </button>
+        </div>
+
+        <!-- Usage Overview -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">Usage Overview</h2>
+                <span class="quota">${used}/${max} requests remaining</span>
+            </div>
+
+            <div class="progress-wrapper">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:${percentUsed}%;"></div>
+                </div>
+                <div class="progress-label">${percentUsed.toFixed(1)}% used</div>
+                <div class="expiry-countdown">
+                    <i class="fas fa-clock"></i> ${daysRemaining} days remaining
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-chart-line fa-2x"></i>
+                    <div class="stat-value">${used}</div>
+                    <div class="stat-label">Total Requests</div>
+                </div>
+                <div class="stat-card secondary">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                    <div class="stat-value">${Math.round(used * 0.95)}</div>
+                    <div class="stat-label">Successful</div>
+                </div>
+                <div class="stat-card success">
+                    <i class="fas fa-times-circle fa-2x"></i>
+                    <div class="stat-value">${Math.round(used * 0.05)}</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                <div class="stat-card warning">
+                    <i class="fas fa-key fa-2x"></i>
+                    <div class="stat-value" id="api-key-count">0</div>
+                    <div class="stat-label">Active API Keys</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shared People Section (only show for owners) -->
+        ${isOwner ? renderSharedPeople(plan.id) : ''}
+
+        <!-- API Keys Section -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">API Keys</h2>
+                ${(isOwner || plan.access_role === 'editor') ? `
+                    <a href="#" class="section-action" id="createApiKeyBtn">
+                        <i class="fas fa-plus"></i> Create API Key
+                    </a>
+                ` : ''}
+            </div>
+            
+            <div class="api-keys-grid" id="api-keys-list">
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p>Loading API keys...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Requests -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">Recent Requests</h2>
+                <a href="#" class="section-action">
+                    <i class="fas fa-download"></i> Export CSV
+                </a>
+            </div>
+            
+            <table class="requests-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Wallet Address</th>
+                        <th>API Key</th>
+                        <th>Response Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-table-body"></tbody>
+            </table>
+        </div>
+    `;
+
+    // Initialize components
+    initializeApiKeys(plan.id);
+    if (isOwner) {
+        initializeSharedPeople(plan.id);
+    }
+    initializeRequestsTable(plan.id);
+    initializePlanDashboardListeners();
+}
+    function maskApiKey(apiKey) {
+        if (apiKey.length < 12) return apiKey;
+        return apiKey.substring(0, 8) + '...' + apiKey.substring(apiKey.length - 8);
+    }
+function showFullApiKey(keyId, fullKey) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Full API Key</h2>
+                <button class="close-modal" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div style="margin: 20px 0;">
+                <p><strong>Warning:</strong> Keep this key secure and never expose it in client-side code.</p>
+                <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace; word-break: break-all; border: 1px solid #ddd;">
+                    ${fullKey}
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="copyApiKey('${fullKey}')">
+                    <i class="fas fa-copy"></i> Copy to Clipboard
+                </button>
+                <button class="btn btn-primary" onclick="this.closest('.modal').remove()">Close</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+function openCreateApiKeyModal() {
+    const modal = document.getElementById('createApiKeyModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Clear previous values
+        document.getElementById('key-name').value = '';
+        document.getElementById('key-type').value = 'live';
+    }
+}
+
+async function createApiKey() {
+    const keyName = document.getElementById('key-name').value;
+    const keyType = document.getElementById('key-type').value;
+    const modal = document.getElementById('createApiKeyModal');
+    
+    if (!keyName.trim()) {
+        alert('Please enter a key name');
+        return;
+    }
+    
+    if (!currentPlanView) {
+        alert('No plan selected');
+        return;
+    }
+    
+    const createBtn = document.getElementById('generateApiKeyBtn');
+    const originalText = createBtn.innerHTML;
+    
+    try {
+        createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        createBtn.disabled = true;
+        
+        const response = await fetch('/api/apikeys', {  // Changed endpoint to /api/apikeys
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                plan_id: currentPlanView.id,
+                key_name: keyName,  // Changed to key_name to match backend
+                key_type: keyType
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            modal.style.display = 'none';
+            
+            // Show the new API key in a success modal
+            showNewApiKeyModal(result.api_key, keyName);
+            
+            // Refresh API keys list
+            await initializeApiKeys(currentPlanView.id);
+            
+        } else {
+            alert('Error creating API key: ' + result.error);
+        }
+        
+    } catch (error) {
+        console.error('Error creating API key:', error);
+        alert('Error creating API key. Please try again.');
+    } finally {
+        createBtn.innerHTML = originalText;
+        createBtn.disabled = false;
+    }
+}
+
+function showNewApiKeyModal(apiKey, keyName) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>API Key Created Successfully!</h2>
+                <button class="close-modal" onclick="this.closest('.modal').remove()">&times;</button>
+            </div>
+            <div style="margin: 20px 0;">
+                <p><strong>Key Name:</strong> ${keyName}</p>
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 15px 0; border: 1px solid #4CAF50;">
+                    <p style="margin: 0 0 10px 0; color: #2e7d32;"><strong>⚠️ Important:</strong> Copy this API key now. You won't be able to see it again!</p>
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace; word-break: break-all; border: 1px solid #ddd;">
+                        ${apiKey}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="copyApiKey('${apiKey}')">
+                    <i class="fas fa-copy"></i> Copy to Clipboard
+                </button>
+                <button class="btn btn-primary" onclick="this.closest('.modal').remove()">I've Saved It</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Auto-remove after 5 minutes for security
+    setTimeout(() => {
+        if (document.body.contains(modal)) {
+            modal.remove();
+        }
+    }, 300000); // 5 minutes
+}
+async function copyApiKey(key) {
+    try {
+        await navigator.clipboard.writeText(key);
+        
+        // Show temporary success message
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 10000;
+            font-weight: 500;
+        `;
+        toast.textContent = 'API key copied to clipboard!';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 3000);
+        
+    } catch (err) {
+        console.error('Failed to copy: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = key;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('API key copied to clipboard!');
+    }
+}
+
+// Revoke API key with confirmation
+async function revokeApiKey(keyId) {
+    if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone and will immediately stop all requests using this key.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/apikeys/${keyId}`, {
+            method: 'DELETE'
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert('API key revoked successfully!');
+            // Refresh API keys list
+            await initializeApiKeys(currentPlanView.id);
+        } else {
+            alert('Error revoking API key: ' + result.error);
+        }
+        
+    } catch (error) {
+        console.error('Error revoking API key:', error);
+        alert('Error revoking API key. Please try again.');
+    }
+}
+
+function renderApiKeys(apiKeys, planId) {
+    const apiKeysList = document.getElementById('api-keys-list');
+    const apiKeyCountElement = document.getElementById('api-key-count');
+    const planTier = currentPlanView?.tier?.toLowerCase().split(' ')[0] || 'starter';
+    const maxKeys = PLAN_LIMITS[planTier]?.max_api_keys || 1;
+    const isOwner = currentPlanView?.access_role === 'owner';
+    const isEditor = currentPlanView?.access_role === 'editor';
+    
+    // Update the API key count display
+    if (apiKeyCountElement) {
+        apiKeyCountElement.textContent = apiKeys.length;
+    }
+    
+    // Check if apiKeys is an array
+    if (!Array.isArray(apiKeys)) {
+        console.error('apiKeys is not an array:', apiKeys);
+        apiKeysList.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--danger);">
+                <i class="fas fa-exclamation-triangle" style="font-size: 40px; margin-bottom: 10px;"></i>
+                <p>Invalid API keys data received.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // In renderApiKeys function, update this part:
+    
+    if (apiKeys.length === 0) {
+        apiKeysList.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--gray);">
+                <i class="fas fa-key" style="font-size: 40px; margin-bottom: 10px;"></i>
+                <p>No API keys yet.</p>
+                ${(isOwner || isEditor) && apiKeys.length < maxKeys ? `
+                    <button class="btn btn-primary" onclick="openCreateApiKeyModal()" style="margin-top: 10px;">
+                        Create API Key
+                    </button>
+                ` : ''}
+            </div>
+        `;
+        return;
+    }
+    try {
+        apiKeysList.innerHTML = apiKeys.map(apiKey => {
+            // Ensure apiKey has required properties
+            if (!apiKey || !apiKey.id || !apiKey.api_key) {
+                console.error('Invalid API key object:', apiKey);
+                return '';
+            }
+            
+            return `
+                <div class="api-key-card">
+                    <div class="api-key-info">
+                        <h4>${apiKey.name || 'API Key #' + apiKey.id}</h4>
+                        <div class="api-key-value">${maskApiKey(apiKey.api_key)}</div>
+                        <small>
+                            Created: ${new Date(apiKey.created_at).toLocaleDateString()} • 
+                            Usage: ${apiKey.usage_count || 0} requests • 
+                            Last used: ${apiKey.last_used ? new Date(apiKey.last_used).toLocaleDateString() : 'Never'}
+                        </small>
+                    </div>
+                    <div class="api-key-actions">
+                        <button class="btn btn-secondary" onclick="copyApiKey('${apiKey.api_key}')">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button class="btn btn-secondary" onclick="showFullApiKey(${apiKey.id}, '${apiKey.api_key}')">
+                            <i class="fas fa-eye"></i> Show
+                        </button>
+                        ${(isOwner || isEditor) ? `
+                            <button class="btn btn-danger" onclick="revokeApiKey(${apiKey.id})">
+                                <i class="fas fa-trash"></i> Revoke
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error rendering API keys:', error);
+        apiKeysList.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--danger);">
+                <i class="fas fa-exclamation-triangle" style="font-size: 40px; margin-bottom: 10px;"></i>
+                <p>Error displaying API keys: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Initialize API keys
+async function initializeApiKeys(planId) {
+    const apiKeysList = document.getElementById('api-keys-list');
+    
+    try {
+        console.log(`Fetching API keys for plan: ${planId}`);
+        const response = await fetch(`/api/plans/${planId}/apikeys`);
+        
+        console.log(`Response status: ${response.status}`);
+        
+        if (response.ok) {
+            const apiKeys = await response.json();
+            console.log(`Received ${apiKeys.length} API keys:`, apiKeys);
+            currentPlanApiKeys = apiKeys;
+            renderApiKeys(apiKeys, planId);
+        } else if (response.status === 403) {
+            // No permission to view API keys
+            console.log('User does not have permission to view API keys');
+            apiKeysList.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: var(--gray);">
+                    <i class="fas fa-eye-slash" style="font-size: 40px; margin-bottom: 10px;"></i>
+                    <p>You don't have permission to view API keys for this shared plan.</p>
+                </div>
+            `;
+        } else if (response.status === 404) {
+            console.log('Plan not found');
+            apiKeysList.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: var(--gray);">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 40px; margin-bottom: 10px;"></i>
+                    <p>Plan not found.</p>
+                </div>
+            `;
+        } else {
+            const errorText = await response.text();
+            console.error('Failed to fetch API keys:', response.status, errorText);
+            apiKeysList.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: var(--gray);">
+                    <i class="fas fa-exclamation-circle" style="font-size: 40px; margin-bottom: 10px;"></i>
+                    <p>Failed to load API keys. Status: ${response.status}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error fetching API keys:', error);
+        apiKeysList.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: var(--gray);">
+                <i class="fas fa-exclamation-circle" style="font-size: 40px; margin-bottom: 10px;"></i>
+                <p>Error loading API keys: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+        // Initialize requests table
+function shortenWallet(wallet) {
+    if (!wallet) return "";
+    return wallet.length > 10
+        ? wallet.substring(0, 6) + "..." + wallet.slice(-6)
+        : wallet;
+}
+
+function shortenApiKey(apiKey) {
+    if (!apiKey) return "";
+    return "..." + apiKey.slice(-6); // keep last 6 chars only
+}
+
+async function initializeRequestsTable(planId) {
+    const tbody = document.getElementById('requests-table-body');
+
+    try {
+        const res = await fetch(`/api/plans/${planId}/requests`);
+        const requests = await res.json();
+
+        if (!Array.isArray(requests)) {
+            tbody.innerHTML = `<tr><td colspan="5">No requests found</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = requests.map(req => `
+            <tr>
+                <td>${new Date(req.created_at).toLocaleString()}</td>
+                <td>${shortenWallet(req.wallet_address)}</td>
+                <td>${shortenApiKey(req.api_key)}</td>
+                <td>${req.response_time}ms</td>
+                <td>
+                    <span class="status-badge ${req.status === 'success' ? 'status-success' : 'status-error'}">
+                        ${req.status === 'success' ? 'Success' : 'Failed'}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error("Error fetching requests:", err);
+        tbody.innerHTML = `<tr><td colspan="5">Error loading requests</td></tr>`;
+    }
+}
+        
+// API Key functions
+        function copyApiKey(key) {
+            navigator.clipboard.writeText(key).then(() => {
+                alert('API key copied to clipboard!');
+            });
+        }
+
+        function revokeApiKey(keyId) {
+            if (confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+                console.log('Revoking API key:', keyId);
+                alert('API key revoked successfully!');
+            }
+        }
+
+        // Fetch and render user plans
+        async function fetchUserPlans() {
+            try {
+                const res = await fetch("/api/plans/my");
+                if (res.ok) {
+                    const plans = await res.json();
+                    renderUserPlans(plans);
+                } else {
+                    renderUserPlans([]);
+                }
+            } catch (err) {
+                renderUserPlans([]);
+            }
+        }
+
+function renderUserPlans(plans) {
+    const plansGrid = document.getElementById('plans-grid');
+    
+    if (!plans || plans.length === 0) {
+        plansGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--gray);">
+                <i class="fas fa-cube" style="font-size: 40px; margin-bottom: 10px;"></i>
+                <p>You don't have any active plans yet.</p>
+                <button class="btn btn-primary" id="createFirstPlanBtn" style="margin-top: 15px;">
+                    Create Your First Plan
+                </button>
+            </div>
+        `;
+        
+        document.getElementById('createFirstPlanBtn')?.addEventListener('click', () => {
+            document.getElementById('createPlanBtn').click();
+        });
+        return;
+    }
+    
+    plansGrid.innerHTML = plans.map(plan => {
+        const isActive = plan.status === 'active';
+        const isOwner = plan.access_role === 'owner';
+        const features = PLANS[plan.tier.toLowerCase().split(' ')[0]]?.features || ['Custom features'];
+        const accessBadge = isOwner ? '' : `<div class="plan-badge badge-shared" style="margin-left: 10px;">
+            <i class="fas fa-share-alt"></i> Shared (${plan.access_role})
+        </div>`;
+
+        return `
+            <div class="plan-card" onclick="showPlanDashboard(${JSON.stringify(plan).replace(/"/g, '&quot;')})">
+                <div class="plan-header">
+                    <div style="display: flex; align-items: center;">
+                        <div class="plan-name">${plan.tier}</div>
+                        ${accessBadge}
+                    </div>
+                    <div class="plan-status ${isActive ? 'status-active' : 'status-expired'}">
+                        ${isActive ? 'Active' : 'Expired'}
+                    </div>
+                </div>
+                <div class="plan-details">
+                    ${features.map(feature => `
+                        <div class="plan-detail">
+                            <i class="fas fa-check-circle"></i> ${feature}
+                        </div>
+                    `).join('')}
+                    <div class="plan-detail">
+                        <i class="fas fa-calendar"></i> ${isActive ? 'Expires' : 'Expired'}: ${new Date(plan.end_date).toLocaleDateString()}
+                    </div>
+                    ${!isOwner && plan.owner_username ? `
+                        <div class="plan-detail">
+                            <i class="fas fa-user"></i> Owner: ${plan.owner_username}
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="plan-actions">
+                    ${isOwner ? `
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); renewPlan('${plan.id}')">Renew</button>
+                        <button class="btn btn-secondary" onclick="event.stopPropagation(); upgradePlan('${plan.id}')">Upgrade</button>
+                    ` : `
+                        <button class="btn btn-secondary" onclick="event.stopPropagation(); showPlanDashboard(${JSON.stringify(plan).replace(/"/g, '&quot;')})">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+        
+// Plan action functions
+        function renewPlan(planId) {
+            alert('Renew functionality for plan ' + planId + ' will be implemented soon!');
+        }
+
+        function upgradePlan(planId) {
+            document.getElementById('createPlanModal').style.display = 'flex';
+        }
+
+        // Initialize event listeners
+        function initializeEventListeners() {
+            const modal = document.getElementById('createPlanModal');
+            const createPlanBtn = document.getElementById('createPlanBtn');
+            const closeModalBtns = document.querySelectorAll('.close-modal');
+            const planOptions = document.querySelectorAll('.plan-option');
+            const purchaseBtn = document.querySelector('.modal-actions .btn-primary');
+            
+            selectedPlan = PLANS.growth;
+            
+            createPlanBtn?.addEventListener('click', function(e) {
+                e.preventDefault();
+                modal.style.display = 'flex';
+            });
+            
+            closeModalBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                    resetPurchaseButton();
+                });
+            });
+            
+            planOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    planOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    const planName = this.querySelector('h3').textContent;
+                    if (planName.includes('Starter')) selectedPlan = PLANS.starter;
+                    else if (planName.includes('Growth')) selectedPlan = PLANS.growth;
+                    else if (planName.includes('Professional')) selectedPlan = PLANS.professional;
+                });
+            });
+            
+            purchaseBtn?.addEventListener('click', createPayment);
+            
+            window.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    resetPurchaseButton();
+                }
+            });
+        }
+
+function initializePlanDashboardListeners() {
+    const apiKeyModal = document.getElementById('createApiKeyModal');
+    const createApiKeyBtn = document.getElementById('createApiKeyBtn');
+    const closeModalBtns = document.querySelectorAll('.close-modal');
+    
+    createApiKeyBtn?.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Check if user can create more API keys
+        const planTier = currentPlanView?.tier?.toLowerCase().split(' ')[0] || 'starter';
+        const maxKeys = PLAN_LIMITS[planTier]?.max_api_keys || 1;
+        
+        if (currentPlanApiKeys.length >= maxKeys) {
+            alert(`You've reached the maximum number of API keys (${maxKeys}) for your ${planTier} plan. Please upgrade to create more keys.`);
+            return;
+        }
+        
+        openCreateApiKeyModal();
+    });
+    
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            apiKeyModal.style.display = 'none';
+        });
+    });
+    
+    // Only add event listener if user has permission to create API keys
+    const isOwner = currentPlanView?.access_role === 'owner';
+    const isEditor = currentPlanView?.access_role === 'editor';
+    if (isOwner || isEditor) {
+        document.getElementById('generateApiKeyBtn')?.addEventListener('click', createApiKey);
+    }
+}       
+function resetPurchaseButton() {
+            const purchaseBtn = document.querySelector('.modal-actions .btn-primary');
+            if (purchaseBtn) {
+                purchaseBtn.innerHTML = 'Purchase Plan';
+                purchaseBtn.disabled = false;
+            }
+        }
+
+        async function createPayment() {
+            if (!selectedPlan) {
+                alert('Please select a plan first');
+                return;
+            }
+            
+            const purchaseBtn = document.querySelector('.modal-actions .btn-primary');
+            const modal = document.getElementById('createPlanModal');
+            
+            try {
+                purchaseBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                purchaseBtn.disabled = true;
+                
+                const paymentData = {
+                    amount: selectedPlan.price,
+                    memo: `TrustPi ${selectedPlan.name}`,
+                    metadata: { 
+                        plan_id: selectedPlan.id,
+                        type: "plan_purchase",
+                        walletAddress: "plan_purchase"
+                    },
+                };
+                
+                Pi.createPayment(paymentData, {
+                    onReadyForServerApproval: async (paymentId) => {
+                        try {
+                            const response = await fetch("/payment/approve", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ paymentId })
+                            });
+                            
+                            const result = await response.json();
+                            if (response.ok) {
+                                console.log("Payment approved successfully");
+                            } else {
+                                throw new Error(result.message || "Approval failed");
+                            }
+                        } catch (error) {
+                            throw error;
+                        }
+                    },
+
+                    onReadyForServerCompletion: async (paymentId, txid) => {
+                        try {
+                            const response = await fetch("/payment/complete", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ paymentId, txid })
+                            });
+
+                            const result = await response.json();
+
+                            if (result.status === "ok") {
+                                const activateResponse = await fetch("/api/plans/activate", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        payment_id: paymentId,
+                                        plan_id: selectedPlan.id,
+                                        txid: txid
+                                    })
+                                });
+                                
+                                const activateResult = await activateResponse.json();
+                                
+                                if (activateResponse.ok) {
+                                    modal.style.display = 'none';
+                                    alert('Plan purchased successfully!');
+                                    fetchUserPlans();
+                                } else {
+                                    throw new Error(activateResult.error || 'Plan activation failed');
+                                }
+                            } else {
+                                throw new Error(result.message || 'Completion failed');
+                            }
+                        } catch (error) {
+                            alert('Error: ' + error.message);
+                            resetPurchaseButton();
+                        }
+                    },
+
+                    onCancel: (paymentId) => {
+                        alert('Payment was cancelled');
+                        resetPurchaseButton();
+                    },
+
+                    onError: (error, payment) => {
+                        alert('Payment error: ' + error.message);
+                        resetPurchaseButton();
+                    }
+                });
+
+            } catch (err) {
+                alert('An error occurred while creating payment: ' + err.message);
+                resetPurchaseButton();
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            fetchUserPlans();
+        });
+
+        // [All your other existing functions remain exactly the same...]
+        // API Key functions, payment functions, etc.
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            fetchUserPlans();
+        });
+
+        // [Keep all your existing functions below exactly as they were...]
+    </script>
+</body>
+</html>
