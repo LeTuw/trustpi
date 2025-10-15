@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrustPi API Documentation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background-color: #0f2027;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #fff;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header styling */
+        header {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-weight: 700;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo span {
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-right: 5px;
+        }
+        
+        /* Navigation styling */
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        
+        nav ul li {
+            margin-left: 30px;
+        }
+        
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+            transition: color 0.3s;
+            position: relative;
+            padding: 5px 0;
+        }
+        
+        nav ul li a:hover {
+            color: #14b89c;
+        }
+        
+        nav ul li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #14b89c;
+            transition: width 0.3s;
+        }
+        
+        nav ul li a:hover::after {
+            width: 100%;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        /* Main content */
+        .main-content {
+            padding: 40px 0;
+        }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #14b89c, #2b60de);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .api-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .method-badge {
+            background: #14b89c;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-right: 15px;
+        }
+        
+        .endpoint-url {
+            font-family: 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 5px;
+            flex: 1;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #14b89c;
+        }
+        
+        .description {
+            margin-bottom: 20px;
+            color: #d1d1d1;
+        }
+        
+        /* Code blocks */
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            overflow-x: auto;
+            border-left: 4px solid #14b89c;
+        }
+        
+        .code-block pre {
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .code-block .comment {
+            color: #7f8fa6;
+        }
+        
+        .code-block .string {
+            color: #fbc531;
+        }
+        
+        .code-block .number {
+            color: #44bd32;
+        }
+        
+        .code-block .key {
+            color: #2b60de;
+        }
+        
+        /* Parameters table */
+        .parameters-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .parameters-table th {
+            background: rgba(20, 184, 156, 0.2);
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .parameters-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .parameters-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .parameter-name {
+            font-family: 'Courier New', monospace;
+            color: #14b89c;
+        }
+        
+        .parameter-required {
+            background: rgba(232, 65, 24, 0.2);
+            color: #e84118;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .parameter-optional {
+            background: rgba(251, 197, 49, 0.2);
+            color: #fbc531;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        /* Response section */
+        .response-section {
+            margin-top: 30px;
+        }
+        
+        .response-field {
+            margin-bottom: 10px;
+            padding-left: 15px;
+            border-left: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .response-field-name {
+            font-weight: 600;
+            color: #14b89c;
+        }
+        
+        .response-field-type {
+            color: #7f8fa6;
+            font-size: 0.9rem;
+            margin-left: 10px;
+        }
+        
+        .response-field-desc {
+            color: #d1d1d1;
+            margin-top: 5px;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 40px 0 20px;
+            text-align: center;
+            margin-top: 60px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 20px;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 15px;
+            color: #14b89c;
+        }
+        
+        .footer-section p {
+            color: #d1d1d1;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .footer-section p:hover {
+            color: #14b89c;
+        }
+        
+        .footer-bottom {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d1d1d1;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            nav ul {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                padding: 20px;
+                backdrop-filter: blur(10px);
+            }
+            
+            nav ul.show {
+                display: flex;
+            }
+            
+            nav ul li {
+                margin: 15px 0;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .endpoint-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .method-badge {
+                margin-bottom: 10px;
+            }
+            
+            .parameters-table {
+                font-size: 14px;
+            }
+            
+            .parameters-table th,
+            .parameters-table td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <span>TrustPi</span> API Docs
+            </div>
+            <nav>
+                <ul id="menu">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">Endpoints</a></li>
+                    <li><a href="#">Authentication</a></li>
+                    <li><a href="#">Pricing</a></li>
+                    <li><a href="#">Support</a></li>
+                </ul>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container main-content">
+        <h1 class="page-title">Get Wallet Trust Score</h1>
+        
+        <div class="api-section">
+            <div class="endpoint-header">
+                <div class="method-badge">GET</div>
+                <div class="endpoint-url">/api/pi-trust/&lt;wallet_id&gt;</div>
+            </div>
+            
+            <div class="description">
+                <p>Retrieve a comprehensive trust score for any Pi Network wallet address. The score is calculated based on multiple factors including transaction history, account age, balance stability, and network connections.</p>
+            </div>
+            
+            <h2 class="section-title">Authentication</h2>
+            <p>This endpoint requires API key authentication. Include your API key in the request headers.</p>
+            
+            <div class="code-block">
+                <pre><span class="comment"># Required headers</span>
+<span class="key">Authorization</span>: Bearer <span class="string">your_api_key_here</span>
+<span class="comment"># OR</span>
+<span class="key">X-API-Key</span>: <span class="string">your_api_key_here</span></pre>
+            </div>
+            
+            <h2 class="section-title">Parameters</h2>
+            <table class="parameters-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="parameter-name">wallet_id</td>
+                        <td>String</td>
+                        <td><span class="parameter-required">Required</span></td>
+                        <td>The Pi Network wallet address to analyze (e.g., GBQWCPVKFHB35TANHS7EBVELFGXCDGG6UPVYAZGH2MDT42PFG23EQUSN)</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h2 class="section-title">Request Example</h2>
+            <div class="code-block">
+                <pre><span class="comment"># cURL example</span>
+curl -X GET \
+  <span class="string">"https://trustpi.fit/api/pi-trust/GBQWCPVKFHB35TANHS7EBVELFGXCDGG6UPVYAZGH2MDT42PFG23EQUSN"</span> \
+  -H <span class="string">"Authorization: Bearer pk_live_your_api_key_here"</span> \
+  -H <span class="string">"Content-Type: application/json"</span></pre>
+            </div>
+            
+            <div class="code-block">
+                <pre><span class="comment"># JavaScript example</span>
+<span class="key">const</span> response = <span class="key">await</span> fetch(
+  <span class="string">'https://trustpi.fit/api/pi-trust/GBQWCPVKFHB35TANHS7EBVELFGXCDGG6UPVYAZGH2MDT42PFG23EQUSN'</span>,
+  {
+    <span class="key">method</span>: <span class="string">'GET'</span>,
+    <span class="key">headers</span>: {
+      <span class="string">'Authorization'</span>: <span class="string">'Bearer pk_live_your_api_key_here'</span>,
+      <span class="string">'Content-Type'</span>: <span class="string">'application/json'</span>
+    }
+  }
+);
+
+<span class="key">const</span> data = <span class="key">await</span> response.json();</pre>
+            </div>
+            
+            <h2 class="section-title">Response</h2>
+            <div class="code-block">
+                <pre>{
+  <span class="key">"wallet_id"</span>: <span class="string">"GBQWCPVKFHB35TANHS7EBVELFGXCDGG6UPVYAZGH2MDT42PFG23EQUSN"</span>,
+  <span class="key">"pi_trust_score"</span>: <span class="number">618</span>,
+  <span class="key">"category"</span>: <span class="string">"Established Member"</span>,
+  <span class="key">"components"</span>: {
+    <span class="key">"payment_reliability"</span>: <span class="number">700</span>,
+    <span class="key">"account_tenure"</span>: <span class="number">925</span>,
+    <span class="key">"network_strength"</span>: <span class="number">520</span>,
+    <span class="key">"balance_health"</span>: <span class="number">253</span>,
+    <span class="key">"onchain_attestations"</span>: <span class="number">462</span>
+  },
+  <span class="key">"breakdown"</span>: {
+    <span class="key">"interpretation"</span>: <span class="string">"This wallet shows well-established account, low balance stability"</span>,
+    <span class="key">"kyc_bonus"</span>: <span class="number">300</span>,
+    <span class="key">"weighted_components"</span>: {
+      <span class="key">"account_tenure"</span>: <span class="number">185</span>,
+      <span class="key">"balance_health"</span>: <span class="number">38</span>,
+      <span class="key">"network_strength"</span>: <span class="number">104</span>,
+      <span class="key">"onchain_attestations"</span>: <span class="number">46</span>,
+      <span class="key">"payment_reliability"</span>: <span class="number">245</span>
+    }
+  }
+}</pre>
+            </div>
+            
+            <div class="response-section">
+                <h3 class="section-title">Response Fields</h3>
+                
+                <div class="response-field">
+                    <div class="response-field-name">wallet_id <span class="response-field-type">String</span></div>
+                    <div class="response-field-desc">The Pi wallet address that was analyzed</div>
+                </div>
+                
+                <div class="response-field">
+                    <div class="response-field-name">pi_trust_score <span class="response-field-type">Integer</span></div>
+                    <div class="response-field-desc">Overall trust score (300-1000). KYC-verified wallets start at 300.</div>
+                </div>
+                
+                <div class="response-field">
+                    <div class="response-field-name">category <span class="response-field-type">String</span></div>
+                    <div class="response-field-desc">Trust category based on score: "Unproven", "Newcomer", "Active Participant", "Established Member", "Reliable Partner", "Trusted Leader", "Elite"</div>
+                </div>
+                
+                <div class="response-field">
+                    <div class="response-field-name">components <span class="response-field-type">Object</span></div>
+                    <div class="response-field-desc">Detailed breakdown of individual component scores (0-1000)</div>
+                </div>
+                
+                <div class="response-field">
+                    <div class="response-field-name">breakdown <span class="response-field-type">Object</span></div>
+                    <div class="response-field-desc">Detailed analysis including weighted scores and interpretation</div>
+                </div>
+            </div>
+            
+            <h2 class="section-title">Error Responses</h2>
+            <table class="parameters-table">
+                <thead>
+                    <tr>
+                        <th>Status Code</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>400</td>
+                        <td>Bad Request - Invalid wallet address format</td>
+                    </tr>
+                    <tr>
+                        <td>401</td>
+                        <td>Unauthorized - Missing or invalid API key</td>
+                    </tr>
+                    <tr>
+                        <td>403</td>
+                        <td>Forbidden - Plan is not active</td>
+                    </tr>
+                    <tr>
+                        <td>404</td>
+                        <td>Not Found - Wallet address not found on Pi Network</td>
+                    </tr>
+                    <tr>
+                        <td>429</td>
+                        <td>Too Many Requests - Monthly request limit exceeded</td>
+                    </tr>
+                    <tr>
+                        <td>500</td>
+                        <td>Internal Server Error - Trust score calculation failed</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h2 class="section-title">Rate Limiting</h2>
+            <p>Rate limits are based on your subscription plan:</p>
+            <ul style="color: #d1d1d1; margin-left: 20px; margin-bottom: 20px;">
+                <li><strong>Starter:</strong> 500 requests/month</li>
+                <li><strong>Growth:</strong> 5,000 requests/month</li>
+                <li><strong>Professional:</strong> 20,000 requests/month</li>
+                <li><strong>Enterprise:</strong> Unlimited requests</li>
+            </ul>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <p>API Documentation</p>
+                    <p>Getting Started</p>
+                    <p>API Examples</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <p>About TrustPi</p>
+                    <p>Pricing</p>
+                    <p>Contact Us</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Legal</h3>
+                    <p>Privacy Policy</p>
+                    <p>Terms of Service</p>
+                    <p>Data Processing</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 TrustPi API - Trust Infrastructure for Pi Network. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const menu = document.getElementById('menu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            menu.classList.toggle('show');
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!menu.contains(e.target) && e.target !== mobileMenuBtn) {
+                menu.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
