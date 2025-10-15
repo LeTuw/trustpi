@@ -11,7 +11,25 @@
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <script>
-        Pi.init({ version: "2.0"});
+        Pi.init({ version: "2.0" });
+        function onIncompletePaymentFound(payment) {
+            console.log("Incomplete payment:", payment);
+        }
+        
+        async function initializePiSDK() {
+            try {
+                const scopes = ["username", "payments"];
+                piUser = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                piAuthenticated = true;
+                console.log("Pi SDK authenticated successfully:", piUser);
+            } catch (error) {
+                console.error("Pi SDK authentication failed:", error);
+                piAuthenticated = false;
+                alert("Failed to authenticate with Pi Network. Some features may not work.");
+            }
+        }
+
+        initializePiSDK();
     </script>
     <style>
         * {
@@ -560,15 +578,6 @@
         }
     });
 
-    Pi.init({ version: "2.0" });
-    function onIncompletePaymentFound(payment) {
-        console.log("Incomplete payment:", payment);
-    }   
-    const scopes = ["username","payments"]
-    Pi.authenticate(scopes, onIncompletePaymentFound);
-    console.log("Pi SDK initialized");
-    console.log(scopes)
-
     // Notyf for notifications
     const notyf = new Notyf({
         duration: 3000,
@@ -602,6 +611,7 @@
         // Trigger Pi payment
         Pi.createPayment(paymentData, {
             onReadyForServerApproval: async (paymentId) => {
+                alert("Please approve the payment in your Pi Wallet app to proceed.");
                 console.log("Ready for approval:", paymentId);
                 await fetch("/payment/approve", {
                     method: "POST",
@@ -611,6 +621,7 @@
             },
 
             onReadyForServerCompletion: async (paymentId, txid) => {
+                alert("Payment approved! Completing the trust score check.");
                 console.log("Ready for completion:", paymentId, txid);
                 try {
                     const response = await fetch("/payment/complete", {
