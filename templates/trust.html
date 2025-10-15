@@ -583,9 +583,7 @@
 
     // Form submission
     document.getElementById('checkbtn').addEventListener('click', async function(e) {
-
-        alert("clicked")
-
+        
         const walletAddress = document.getElementById('walletAddress').value.trim();
         if (!isValidWallet(walletAddress)) {
             notyf.error("Invalid wallet address. Must start with G and be 56 characters.");
@@ -698,6 +696,7 @@
 </script>
 </body>
 </html>
+
 
 
 
