@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Check Wallet Trust Score - PiTrust</title>
+    <title>Check Wallet Trust Score - TrustPi</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
@@ -418,7 +418,7 @@
     <header>
         <div class="container header-content">
             <div class="logo">
-                <span>PiTrust</span> Score
+                <span>TrustPi</span> Score
             </div>
             <nav>
                 <ul id="menu">
@@ -528,7 +528,7 @@
                 </div>
                 <div class="footer-section">
                     <h3>Company</h3>
-                    <p>About PiTrust</p>
+                    <p>About TrustPi</p>
                     <p>Pricing</p>
                     <p>Contact Us</p>
                 </div>
@@ -540,7 +540,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2023 PiTrust Score - Trust Infrastructure for Pi Network. All rights reserved.</p>
+                <p>&copy; 2023 TrustPi Score - Trust Infrastructure for Pi Network. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -560,7 +560,7 @@
         }
     });
 
-    
+    Pi.init({ version: "2.0", sandbox: true });
     function onIncompletePaymentFound(payment) {
         console.log("Incomplete payment:", payment);
     }   
@@ -583,7 +583,9 @@
 
     // Form submission
     document.getElementById('checkbtn').addEventListener('click', async function(e) {
-        
+
+        alert("clicked")
+
         const walletAddress = document.getElementById('walletAddress').value.trim();
         if (!isValidWallet(walletAddress)) {
             notyf.error("Invalid wallet address. Must start with G and be 56 characters.");
@@ -595,7 +597,7 @@
 
         const paymentData = {
             amount: 1,
-            memo: "PiTrust check",
+            memo: "TrustPi check",
             metadata: { walletAddress }
         };
 
@@ -603,7 +605,7 @@
         Pi.createPayment(paymentData, {
             onReadyForServerApproval: async (paymentId) => {
                 console.log("Ready for approval:", paymentId);
-                await fetch(`${window.location.origin}/payment/approve`, {
+                await fetch("/payment/approve", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ paymentId })
@@ -613,7 +615,7 @@
             onReadyForServerCompletion: async (paymentId, txid) => {
                 console.log("Ready for completion:", paymentId, txid);
                 try {
-                    const response = await fetch(`${window.location.origin}/payment/complete`, {
+                    const response = await fetch("/payment/complete", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ paymentId, txid })
@@ -696,7 +698,3 @@
 </script>
 </body>
 </html>
-
-
-
-
